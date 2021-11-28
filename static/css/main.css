@@ -9,7 +9,15 @@ header {
 }
 
 .title {
-  float: left;
+  font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  font-size: 17px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin: 0px 20px;
+}
+
+.name {
+  float: right;
   font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
   font-size: 17px;
   letter-spacing: 2.5px;

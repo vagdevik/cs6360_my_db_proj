@@ -2,11 +2,16 @@
 
 {% block heading %}
 <center>
-    <h1>Buy</h1>
+    <h1>Buy BitCoins</h1>
 </center>
 {% endblock %}
 
 {% block content %}
+    <center>
+        {% if error %}
+        <font color="red">{{error}}</font>
+        {% endif %}
+    </center>
 
     <form action="/buy" method="post">
         <div class="form-group">
@@ -18,5 +23,6 @@
 
         <button class="btn btn-primary" type="submit">Buy</button>
     </form>
+
 
 {% endblock %}

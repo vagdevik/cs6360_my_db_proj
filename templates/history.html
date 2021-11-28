@@ -1,0 +1,64 @@
+{%extends "layout.html" %}
+
+{% block title %}
+    <center>
+      <h1>
+    Your Profile
+    </h1>
+    </center>
+{% endblock %}
+
+
+{% block content %}
+    <section class="hero is-success is-fullheight">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+            {{g.user.username}}'s Profile<br>
+            {% if g.user.role =='c' %}
+              Welcome to the Client View
+            {% elif g.user.role =='t' %}
+              Hey there, welcome to you the Trader!
+            {% elif g.user.role =='a' %}
+              This is your dashboard, dear Admin!
+            {% endif %}
+
+    <h1>Your Portfolio</h1>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">DATE_TIME</th>
+          <th scope="col"># of BitCoins</th>
+          <th scope="col">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+          {% set counter = namespace(value=0) %}
+          {% for i in previous_transactions %}
+          <tr>
+              <td>{{ i["DATE_TIME"] }}</th>
+              <td>{{ i["NUMBER_OF_BITCOINS"] }}</td>
+              <td>${{ "%.2f"|format(bitcoin_value * i["NUMBER_OF_BITCOINS"]) }}</td>
+              {% set counter.value = counter.value + 1 %}
+          {% endfor %}
+        </tr>
+          <tr>
+            <td>CASH</td>
+            <td></td>
+            <td>${{ "%.2f"|format(current_cash) }}</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td>${{ "%.2f"|format((current_cash + total)) }}</td>
+          </tr>
+      </tbody>
+    </table>
+          </h1>
+          <br>
+
+        </div>
+      </div>
+    </section>
+{% endblock %}

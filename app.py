@@ -46,16 +46,35 @@ userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Anthony")[0][
 db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
 x = db.execute("SELECT * from Client")
 y = db.execute("SELECT * from User")
-print("\n\n x0: ", x,"\n\n y0", y, "\n")
+# print("\n\n x0: ", x,"\n\n y0", y, "\n")
+
+db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Bill', 'Bill', 'Temoc','1212121333','1111111333','bill@gmail.com','c','password')
+userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Bill")[0]['USER_ID']
+db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
+x = db.execute("SELECT * from Client")
+y = db.execute("SELECT * from User")
+# print("\n\n x0: ", x,"\n\n y0", y, "\n")
+
 # d.execute("CREATE TRIGGER add_to_client_table AFTER INSERT ON User BEGIN INSERT INTO Client SELECT CASE WHEN NEW.email NOT LIKE '%_@__%.__%' THEN END")
 
 
 db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Becca', 'Becca', 'Temoc','1212121222','1111111122','becca@gmail.com','a','password')
+userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Becca")[0]['USER_ID']
+db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
+x = db.execute("SELECT * from Client")
+y = db.execute("SELECT * from User")
+# print("\n\n x0: ", x,"\n\n y0", y, "\n")
+
 db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Carlos', 'Carlos', 'Temoc','1212121233','1111111133','carlos@gmail.com','t','password')
+userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Carlos")[0]['USER_ID']
+db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
+x = db.execute("SELECT * from Client")
+y = db.execute("SELECT * from User")
+# print("\n\n x0: ", x,"\n\n y0", y, "\n")
 ##############
 
 # x = db.execute("SELECT * from Client")
-print("\n\n xxx: ", x)
+# print("\n\n xxx: ", x)
 
 # Ensure responses aren't cached
 @app.after_request
@@ -84,6 +103,7 @@ def before_request():
         role = [w for w in y if w['USER_ID']==session['user_id']]
         print("\n user: ", user, " role: ", role)
         g.role = role[0]['ROLE']
+        g.username = role[0]['USERNAME']
         g.user = user
         print("\n g:", g.user)
 
@@ -99,20 +119,29 @@ def login_required(f):
 def login():
     error = None
     if request.method == 'POST':
+
+        x = db.execute("SELECT * from Client")
+        y = db.execute("SELECT * from User")
+        print("\n\n x1: ", len(x),"\n\n y1", len(y), "\n")
+        # print("\n\n x1: ", x,"\n\n y1", y, "\n")
+
         session.pop('user_id', None)
 
         username = request.form['username']
         password = request.form['password']
 
-        user_record = db.execute("SELECT HPWD, USER_ID from User where FNAME = (?)", username)
+        user_record = db.execute("SELECT HPWD, USER_ID from User where USERNAME = (?)", username)
 
-        
+        print("***** ", user_record, password)
         # user = [x for x in users if x.username == username][0]
         if user_record and user_record[0]['HPWD'] == password:
+
             session['user_id'] = user_record[0]['USER_ID']
             return redirect(url_for('profile'))
 
-        return redirect(url_for('login'))
+        error = "Invalid credentials"
+
+        return render_template('login.html', error=error)
 
     return render_template('login.html')
 
@@ -124,7 +153,7 @@ def logout():
     session.clear()
 
     # Redirect user to login form
-    return redirect("/")
+    return redirect("/login")
 
 
 @app.route('/profile')
@@ -133,8 +162,6 @@ def profile():
 
     user = session["user_id"]
 
-    # db.execute("DELETE FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
-
     previous_transactions = db.execute("SELECT NUMBER_OF_BITCOINS, DATE_TIME FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
     current_cash = db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", user)
 
@@ -142,25 +169,12 @@ def profile():
     current_cash = current_cash[0]['LIQUID_CASH']
     bitcoin_value = float(requests.get('https://api.coindesk.com/v1/bpi/currentprice.json').json()["bpi"]["USD"]["rate"].replace(",", ""))
 
-    # get list of stock prices in order in portfolio
     total = 0.00
-    # price = []
-    # for i in previous_transactions:
-    #     previous_transactions_data = requests.get('https://api.coindesk.com/v1/bpi/currentprice.json').json()["bpi"]["USD"]["rate"].replace(",", "")
-    #     price.append(previous_transactions_data)
-
-    # number of shares in list
-    # share_num = db.execute("SELECT shares FROM portfolio WHERE user_id = (?)", user)
-
-    # sum share price x num of shares for each stock in portfolio
     counter = 0
     for i in previous_transactions:
         total = total + (int(i["NUMBER_OF_BITCOINS"]) * bitcoin_value)
         counter += 1
-    print("\n counter: ", counter)
-
-    db.execute("DELETE FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
-
+    # print("\n counter: ", counter)
 
     return render_template("profile.html", previous_transactions=previous_transactions, bitcoin_value=bitcoin_value, current_cash=current_cash, total=total)
 
@@ -294,9 +308,30 @@ def buy():
         # if not enough funds in account
         elif new_balance < 0:
             print("\n\n @@@ Entered else in Buy!!!\n\n")
-            flash("You do not have enough funds in account.", "danger")
-            return render_template("buy.html")
+            error = "You do not have enough funds in account."
+            return render_template("buy.html", error=error)
 
+@app.route('/history')
+@login_required
+def history():
+
+    user = session["user_id"]
+
+    previous_transactions = db.execute("SELECT NUMBER_OF_BITCOINS, DATE_TIME FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
+    current_cash = db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", user)
+
+    print("\n\n$$$", len(previous_transactions), len(current_cash), "****\n\n")
+    current_cash = current_cash[0]['LIQUID_CASH']
+    bitcoin_value = float(requests.get('https://api.coindesk.com/v1/bpi/currentprice.json').json()["bpi"]["USD"]["rate"].replace(",", ""))
+
+    total = 0.00
+    counter = 0
+    for i in previous_transactions:
+        total = total + (int(i["NUMBER_OF_BITCOINS"]) * bitcoin_value)
+        counter += 1
+    # print("\n counter: ", counter)
+
+    return render_template("history.html", previous_transactions=previous_transactions, bitcoin_value=bitcoin_value, current_cash=current_cash, total=total)
     
 
 
