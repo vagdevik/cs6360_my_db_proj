@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block heading %}
+<center>
+    <h1>Buy</h1>
+</center>
+{% endblock %}
+
+{% block content %}
+
+    <form action="/buy" method="post">
+        <div class="form-group">
+            <input class="form-control" name="bitcoins" placeholder="No of BitCoins" type="number"  min="1" required>
+        </div>
+        <p>Please select the commission type:</p>
+        <input type="radio" id="fiat" name="commission" value="fiat" required="required"><label for="fiat">Fiat</label><br>
+        <input type="radio" id="crypto" name="commission" value="crypto"><label for="crypt">Crypto</label><br>
+
+        <button class="btn btn-primary" type="submit">Buy</button>
+    </form>
+
+{% endblock %}
