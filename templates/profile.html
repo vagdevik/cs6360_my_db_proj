@@ -14,12 +14,12 @@
       <div class="hero-body">
         <div class="container">
           <h1 class="title">
-            {{g.user.username}}'s Profile<br>
-            {% if g.user.role =='c' %}
+            {{g.username}}'s Profile<br>
+            {% if g.role =='client' %}
               Welcome to the Client View
-            {% elif g.user.role =='t' %}
+            {% elif g.role =='trader' %}
               Hey there, welcome to you the Trader!
-            {% elif g.user.role =='a' %}
+            {% elif g.role =='admin' %}
               This is your dashboard, dear Admin!
             {% endif %}
 

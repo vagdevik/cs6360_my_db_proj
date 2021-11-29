@@ -4,20 +4,26 @@
   <center>
   <h1>SignUp Page</h1>
   <br>
+  {% if error %}
+    <p class="error"><font color="red">{{ error }}</font>
+  {% endif %}
   <form action="" method="post">
-    <input type="text" placeholder="Username" name="username" value="{{request.form.username }}" required><br><br>
-     <input type="password" placeholder="Password" name="password" value="{{request.form.password }}" required><br><br>
+    <input type="text" placeholder="First Name" name="fname" value="{{request.form.lname }}" required><br><br>
+    <input type="text" placeholder="Last Name" name="lname" value="{{request.form.lname }}" required><br><br>
       <input type="text" placeholder="Street" name="street" value="{{request.form.street }}" required><br><br>
       <input type="text" placeholder="City" name="city" value="{{request.form.city }}" required><br><br>
       <input type="text" placeholder="ZIP" name="zip" value="{{request.form.zip }}" required><br><br>
       <input type="text" placeholder="State" name="state" value="{{request.form.state }}" required><br><br>
       <input type="tel" placeholder ="Phone" name="phone" value="{{request.form.phone}}" pattern="[0-9]{10}" required><br><br>
        <input type="tel" placeholder="Mobile" name="mobile" value="{{request.form.mobile}}" pattern="[0-9]{10}" required><br><br>
+       <input type="text" placeholder="Username" name="username" value="{{request.form.username }}" required><br><br>
+       <input type="email" placeholder="Email Address" name="email" value="{{request.form.email }}" required><br><br>
+     <input type="password" placeholder="Password" name="password" value="{{request.form.password }}" required><br><br>
+     <p>You want to SignUp as a ?
+        <input type="radio" id="client" name="role" value="client" required="required"><label for="client">Client</label>
+        <input type="radio" id="trader" name="role" value="trader"><label for="trader">Trader</label></p>
     <input class="btn btn-default" type="submit" value="SignUp!">
   </form>
-  {% if error %}
-    <p class="error"><strong>Error:</strong> {{ error }}
-  {% endif %}
   </center>
 </div>
 {% endblock %}

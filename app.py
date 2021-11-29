@@ -40,36 +40,36 @@ users.append(User(id=3, username='Carlos', password='somethingsimple', role='t')
 
 
 ############## change this to triggers ###########
-db.execute("DELETE FROM User")
-db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Anthony', 'Anthony', 'Temoc','1212121212','1111111111','anthony@gmail.com','c','password')
-userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Anthony")[0]['USER_ID']
-db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
-x = db.execute("SELECT * from Client")
-y = db.execute("SELECT * from User")
-# print("\n\n x0: ", x,"\n\n y0", y, "\n")
+# db.execute("DELETE FROM User")
+# db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Anthony', 'Anthony', 'Temoc','1212121212','1111111111','anthony@gmail.com','c','password')
+# userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Anthony")[0]['USER_ID']
+# db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
+# x = db.execute("SELECT * from Client")
+# y = db.execute("SELECT * from User")
+# # print("\n\n x0: ", x,"\n\n y0", y, "\n")
 
-db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Bill', 'Bill', 'Temoc','1212121333','1111111333','bill@gmail.com','c','password')
-userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Bill")[0]['USER_ID']
-db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
-x = db.execute("SELECT * from Client")
-y = db.execute("SELECT * from User")
-# print("\n\n x0: ", x,"\n\n y0", y, "\n")
+# db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Bill', 'Bill', 'Temoc','1212121333','1111111333','bill@gmail.com','c','password')
+# userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Bill")[0]['USER_ID']
+# db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
+# x = db.execute("SELECT * from Client")
+# y = db.execute("SELECT * from User")
+# # print("\n\n x0: ", x,"\n\n y0", y, "\n")
 
-# d.execute("CREATE TRIGGER add_to_client_table AFTER INSERT ON User BEGIN INSERT INTO Client SELECT CASE WHEN NEW.email NOT LIKE '%_@__%.__%' THEN END")
+# # d.execute("CREATE TRIGGER add_to_client_table AFTER INSERT ON User BEGIN INSERT INTO Client SELECT CASE WHEN NEW.email NOT LIKE '%_@__%.__%' THEN END")
 
 
-db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Becca', 'Becca', 'Temoc','1212121222','1111111122','becca@gmail.com','a','password')
-userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Becca")[0]['USER_ID']
-db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
-x = db.execute("SELECT * from Client")
-y = db.execute("SELECT * from User")
-# print("\n\n x0: ", x,"\n\n y0", y, "\n")
+# db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Becca', 'Becca', 'Temoc','1212121222','1111111122','becca@gmail.com','a','password')
+# userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Becca")[0]['USER_ID']
+# db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
+# x = db.execute("SELECT * from Client")
+# y = db.execute("SELECT * from User")
+# # print("\n\n x0: ", x,"\n\n y0", y, "\n")
 
-db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Carlos', 'Carlos', 'Temoc','1212121233','1111111133','carlos@gmail.com','t','password')
-userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Carlos")[0]['USER_ID']
-db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
-x = db.execute("SELECT * from Client")
-y = db.execute("SELECT * from User")
+# db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Carlos', 'Carlos', 'Temoc','1212121233','1111111133','carlos@gmail.com','t','password')
+# userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Carlos")[0]['USER_ID']
+# db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
+# x = db.execute("SELECT * from Client")
+# y = db.execute("SELECT * from User")
 # print("\n\n x0: ", x,"\n\n y0", y, "\n")
 ##############
 
@@ -99,6 +99,8 @@ def before_request():
         print("\n session['user_id]:", session['user_id'])
     #     for z in x:
             # print("\n zz:",z)
+        x = db.execute("SELECT * from Client")
+        y = db.execute("SELECT * from User")
         user = [z for z in x if z['CLIENT_ID'] == session['user_id']]
         role = [w for w in y if w['USER_ID']==session['user_id']]
         print("\n user: ", user, " role: ", role)
@@ -123,7 +125,7 @@ def login():
         x = db.execute("SELECT * from Client")
         y = db.execute("SELECT * from User")
         print("\n\n x1: ", len(x),"\n\n y1", len(y), "\n")
-        # print("\n\n x1: ", x,"\n\n y1", y, "\n")
+        print("\n\n x1: ", x,"\n\n y1", y, "\n")
 
         session.pop('user_id', None)
 
@@ -182,12 +184,37 @@ def profile():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    exisiting_usernames = [x['USERNAME'] for x in db.execute("SELECT USERNAME FROM User")]
+    print("exisiting_usernames: ", exisiting_usernames)
     error = None
     if request.method == 'POST':
-        if request.form['username'] != 'admin' or request.form['password'] != 'admin':
-            error = 'Invalid Credentials. Please try again.'
+        username = request.form['username']
+        if username in exisiting_usernames:
+            error = "Username is already taken, please use another username."
+            return render_template('signup.html', error=error)
         else:
-            return redirect(url_for('login'))
+            fname = request.form['fname']
+            lname = request.form['lname']
+            password = request.form['password']
+            street = request.form['street']
+            city = request.form['city']
+            zipcode = request.form['zip']
+            state = request.form['state']
+            email = request.form['email']
+            phone = request.form['phone']
+            cell = request.form['mobile']
+            role = request.form.get("role")
+
+            print("role: ", role)
+
+            db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", username, fname, lname, phone, cell, email, role, password)
+            rec = db.execute("SELECT USER_ID FROM User WHERE  USERNAME=(?)", username)
+            print("!!! rec: ", rec)
+            user_id = rec[0]['USER_ID']
+            db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", user_id)
+            db.execute("INSERT INTO Address(CLIENT_ID, STREET, CITY, STATE, ZIP) VALUES(?, ?, ?, ?, ?)", user_id, street, city, state, zipcode )
+            print("signup rec: ", rec)
+            return render_template('login.html', msg="Account Created, You can Login now!")
     return render_template('signup.html', error=error)
 
 ############
