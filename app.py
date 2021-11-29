@@ -16,8 +16,8 @@ app.secret_key = 'super secret key'
 # Configure CS50 Library to use SQLite database
 # db = SQL("sqlite:///mysqlite_DB_COMMANDS.db")
 
-db = SQL("sqlite:////Users/vag/Documents/dbproj/mysqlite_DB_COMMANDS.db")
-# db = sqlite3.connect("sqlite:///mysqlite_DB_COMMANDS.db")
+# db = SQL("sqlite:////Users/Amulya Atluri/PycharmProjects/cs6360_my_db_proj/mysqlite_DB_COMMANDS.db")
+db = SQL("sqlite:///mysqlite_DB_COMMANDS.db")
 
 ######## dummy class to test role-based access ######### 
 class User:
@@ -273,6 +273,13 @@ def add_to_wallet():
         return "Something Unexpected!"
 
 ##########
+@app.route('/view_requests', methods=['POST', 'GET'])
+@login_required
+def view_requests():
+    user = session["user_id"]
+    t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?)", user)
+    print("\n\n ttt: ", t)
+    return render_template("view_requests.html",t=t)
 
 @app.route('/buy', methods=['POST', 'GET'])
 @login_required
@@ -359,7 +366,6 @@ def history():
     # print("\n counter: ", counter)
 
     return render_template("history.html", previous_transactions=previous_transactions, bitcoin_value=bitcoin_value, current_cash=current_cash, total=total)
-    
 
 
 if __name__ == "__main__":
