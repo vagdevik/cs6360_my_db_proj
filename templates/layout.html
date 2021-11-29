@@ -36,8 +36,10 @@
                     <li><a href="{{ url_for('profile') }}">Portfolio</a></li>
                     <li><a href="{{ url_for('bitinfo') }}">BitInfo</a></li>
                     <li><a href="{{url_for('buy')}}">Buy</a></li>
-                    <li><a href="#">Sell</a></li>
+                    <li><a href="{{url_for('sell')}}">Sell</a></li>
                     <li><a href="{{url_for('add_to_wallet')}}">Add to Wallet</a></li>
+                    <li><a href="{{url_for('request_a_trader')}}">Request a Trader</a></li>
+                    <li><a href="{{url_for('pay_to_trader')}}">Pay a Trader</a></li>
                     <li><a href="{{ url_for('history') }}">History</a></li>
                   {% elif  g.role =='admin' %}
                     <li><a href="{{ url_for('bitinfo') }}">BitInfo</a></li>

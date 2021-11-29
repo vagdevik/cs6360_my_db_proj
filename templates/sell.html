@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+
+
+
+{% block content %}
+
+ <section class="hero is-success is-fullheight">
+      <div class="hero-body">
+        <div class="container">
+            {% block title %}
+                <center>
+                    <h1>Sell BitCoins</h1>
+                </center>
+            {% endblock %}
+
+    <center>
+        {% if error %}
+        <font color="red">{{error}}</font>
+        {% endif %}
+    </center>
+
+    <form action="/sell" method="post">
+        <div class="form-group">
+            <input class="form-control" name="bitcoins" placeholder="# of Bitcoins you want to Sell" type="number"  min="1" required>
+        </div>
+        <button class="btn btn-primary" type="submit">Sell</button>
+    </form>
+    
+        </div>
+      </div>
+    </section>
+
+{% endblock %}

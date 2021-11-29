@@ -169,16 +169,18 @@ def profile():
 
     print("\n\n$$$", len(previous_transactions), len(current_cash), "****\n\n")
     current_cash = current_cash[0]['LIQUID_CASH']
-    bitcoin_value = float(requests.get('https://api.coindesk.com/v1/bpi/currentprice.json').json()["bpi"]["USD"]["rate"].replace(",", ""))
+    bitcoin_value = round(float(requests.get('https://api.coindesk.com/v1/bpi/currentprice.json').json()["bpi"]["USD"]["rate"].replace(",", "")),2)
 
     total = 0.00
     counter = 0
+    total_bitcoins = 0
     for i in previous_transactions:
-        total = total + (int(i["NUMBER_OF_BITCOINS"]) * bitcoin_value)
+        total_bitcoins = total_bitcoins + i["NUMBER_OF_BITCOINS"]
+        total = total + round((float(i["NUMBER_OF_BITCOINS"]) * bitcoin_value),2)
         counter += 1
     # print("\n counter: ", counter)
 
-    return render_template("profile.html", previous_transactions=previous_transactions, bitcoin_value=bitcoin_value, current_cash=current_cash, total=total)
+    return render_template("profile.html", total_bitcoins=total_bitcoins, total=total, current_cash=current_cash)
 
 ############
 
@@ -226,13 +228,14 @@ def index():
 ############
 
 @app.route("/bitinfo")
+@login_required
 def bitinfo():
     # Get the fluctuating BitCoin value from API
     try:
         api_key = os.environ.get("API_KEY")
         response = requests.get(f"https://api.coindesk.com/v1/bpi/currentprice.json")
         data = response.json()
-        bitvalue = float(data["bpi"]["USD"]["rate"].replace(",", ""))
+        bitvalue = round(float(data["bpi"]["USD"]["rate"].replace(",", "")),2)
         print("y3", bitvalue) 
         print("Y1")
         response.raise_for_status()
@@ -293,7 +296,7 @@ def buy():
         if response.status_code == 500 or response.status_code == 404:
             flash("Something went wrong, Please try again.", "danger")
             return render_template("buy.html")
-        data = float(response.json()["bpi"]["USD"]["rate"].replace(",", ""))
+        data = round(float(response.json()["bpi"]["USD"]["rate"].replace(",", "")))
         user = session["user_id"]
         print("\n uuu: userid:", user, " bitcoins: ", bitcoins, " commission_type: ", commission_type, " bitvalue: ", data)
 
@@ -320,7 +323,7 @@ def buy():
             print("\n\n !!! new_balance: ", new_balance)
             #  ##################################### to add fields for the COMMISSION_TYPE, COMMISSION_AMOUNT in the form, and plug those values below ############
             #  ##################################### add the membership upgradation and consideration code #######
-            db.execute("INSERT INTO BITCOIN_TRANSACTIONS (CLIENT_ID, NUMBER_OF_BITCOINS, PRICE, COMMISSION_TYPE, COMMISSION_AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?, ?, ?)", user, bitcoins, bitcoins_value, commission_type, 12, 1)
+            db.execute("INSERT INTO BITCOIN_TRANSACTIONS (CLIENT_ID, NUMBER_OF_BITCOINS, PRICE, COMMISSION_TYPE, COMMISSION_AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?, ?, ?)", user, bitcoins, data, commission_type, 12, 1)
             #  #####################################
 
             db.execute("UPDATE Client SET LIQUID_CASH = (?), NO_OF_BITCOINS = (?)  WHERE CLIENT_ID = (?)", new_balance, float(bitcoins)+float(no_of_bitcoins), user)
@@ -338,28 +341,112 @@ def buy():
             error = "You do not have enough funds in account."
             return render_template("buy.html", error=error)
 
+# ####################################################################################
+
+@app.route("/sell", methods=["GET", "POST"])
+@login_required
+def sell():
+    """Sell shares of stock"""
+    if request.method == "GET":
+        return render_template("sell.html")
+    else:
+        bitcoins = float(request.form.get("bitcoins"))
+        user = session["user_id"]
+        current_bitcoins = float(db.execute("SELECT NO_OF_BITCOINS FROM Client WHERE CLIENT_ID = (?)", user)[0]["NO_OF_BITCOINS"])
+
+        # user does not own stock
+        if current_bitcoins==0:
+            error = "You do not own any bitcoins to sell."
+            return render_template("sell.html", error=error)
+
+        # user tried to sell more shares than they own
+        elif current_bitcoins < bitcoins:
+            error = "You are trying to sell more number of bitcoins than you own. Please select smaller number."
+            return render_template("sell.html")
+
+        # else
+        else:
+            response = requests.get('https://api.coindesk.com/v1/bpi/currentprice.json')
+            current_cash = db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", user)
+            current_cash = current_cash[0]['LIQUID_CASH']
+            bitvalue = float(response.json()["bpi"]["USD"]["rate"].replace(",", ""))
+            new_balance = current_cash + ( bitvalue * float(bitcoins))
+            bitcoins_left = current_bitcoins-bitcoins
+
+            # update cash balance and number of bitcoins left
+            db.execute("UPDATE Client SET LIQUID_CASH = (?), NO_OF_BITCOINS = (?) WHERE CLIENT_ID = (?)", new_balance, bitcoins_left, user)
+            
+            # if current_bitcoins == bitcoins:
+            #     # update portfolio
+            #     db.execute("DELETE FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
+            # elif current_bitcoins > bitcoins:
+            #     db.execute("UPDATE Client SET LIQUID_CASH = (?) WHERE CLIENT_ID = (?)", new_balance, user)
+
+            # update history
+            db.execute("INSERT INTO BITCOIN_TRANSACTIONS(CLIENT_ID, NUMBER_OF_BITCOINS, PRICE, COMMISSION_TYPE, COMMISSION_AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?, ?, ?)", user, "-"+str(bitcoins), bitvalue, "-", "12", 1)
+
+            # db.execute("INSERT INTO BITCOIN_TRANSACTIONS(user_id, stock, shares, price) VALUES (?, ?, ?, ?)", user, symbol, "-" + shares, price.json()["latestPrice"])
+            flash("Sold!", "primary")
+            return redirect("/history")
+
+        # # if they sell all their stock
+        # if int(shares_owned[0]["shares"]) == int(shares):
+        #     # update cash balance
+        #     db.execute("UPDATE users SET cash = (?) WHERE id = (?)", new_balance, user)
+        #     # update portfolio
+        #     db.execute("DELETE FROM portfolio WHERE user_id = (?) AND symbol = (?)", user, symbol)
+        #     # update history
+        #     db.execute("INSERT INTO buy (user_id, stock, shares, price) VALUES (?, ?, ?, ?)", user, symbol, "-" + shares, price.json()["latestPrice"])
+        #     flash("Sold!", "primary")
+        #     return redirect("/")
+
+        # # if they sell less than all of their shares (from 1 - n shares)
+        # if int(shares_owned[0]["shares"]) > int(shares):
+        #     # update cash balance
+        #     db.execute("UPDATE users SET cash = (?) WHERE id = (?)", new_balance, user)
+        #     # update portfolio
+        #     db.execute("UPDATE portfolio SET shares = shares - (?) WHERE user_id = (?) AND symbol = (?)", shares, user, symbol)
+        #     #update history
+        #     db.execute("INSERT INTO buy (user_id, stock, shares, price) VALUES (?, ?, ?, ?)", user, symbol, "-" + shares, price.json()["latestPrice"])
+        #     flash("Sold!", "primary")
+        #     return redirect("/")
+
+        return "error 500"
+
+# ####################################################################################
+
 @app.route('/history')
 @login_required
 def history():
 
     user = session["user_id"]
 
-    previous_transactions = db.execute("SELECT NUMBER_OF_BITCOINS, DATE_TIME FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
-    current_cash = db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", user)
+    previous_transactions = db.execute("SELECT * FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
+    print("history: previous_transactions:", previous_transactions)
+    # current_cash = db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", user)
 
-    print("\n\n$$$", len(previous_transactions), len(current_cash), "****\n\n")
-    current_cash = current_cash[0]['LIQUID_CASH']
-    bitcoin_value = float(requests.get('https://api.coindesk.com/v1/bpi/currentprice.json').json()["bpi"]["USD"]["rate"].replace(",", ""))
+    # print("\n\n$$$", len(previous_transactions), len(current_cash), "****\n\n")
+    # current_cash = current_cash[0]['LIQUID_CASH']
+    # bitcoin_value = float(requests.get('https://api.coindesk.com/v1/bpi/currentprice.json').json()["bpi"]["USD"]["rate"].replace(",", ""))
 
-    total = 0.00
-    counter = 0
-    for i in previous_transactions:
-        total = total + (int(i["NUMBER_OF_BITCOINS"]) * bitcoin_value)
-        counter += 1
+    # total = 0.00
+    # counter = 0
+    # for i in previous_transactions:
+    #     total = total + (int(i["NUMBER_OF_BITCOINS"]) * bitcoin_value)
+    #     counter += 1
     # print("\n counter: ", counter)
 
-    return render_template("history.html", previous_transactions=previous_transactions, bitcoin_value=bitcoin_value, current_cash=current_cash, total=total)
-    
+    return render_template("history.html", previous_transactions=previous_transactions)
+
+@app.route('/requestTrader')
+@login_required
+def request_a_trader():
+    return render_template("requestTrader.html")
+
+@app.route('/payTrader')
+@login_required
+def pay_to_trader():
+    return render_template("payTrader.html")
 
 
 if __name__ == "__main__":
