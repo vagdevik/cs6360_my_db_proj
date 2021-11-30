@@ -312,11 +312,16 @@ def client_info():
         cz = request.form.get("Client_Zip") +'%'
         print(cz)
 
-    t = db.execute("SELECT u.username,A.STREET ,A.CITY , A.STATE ,A.ZIP ,bt.NUMBER_OF_BITCOINS,bt.price,bt.DATE_TIME\
+    query = "SELECT u.username,A.STREET ,A.CITY , A.STATE ,A.ZIP ,bt.NUMBER_OF_BITCOINS,bt.price,bt.DATE_TIME\
     ,bt.COMMISSION_TYPE,bt.COMMISSION_AMOUNT,bt.FINAL_STATUS FROM Client c , User U, Address A, BITCOIN_TRANSACTIONS bt\
-     where c.CLIENT_ID = U.USER_ID and c.CLIENT_ID =A.CLIENT_ID and bt.CLIENT_ID = c.CLIENT_ID and u.username=(?) \
-     and bt.TRADER_ID =(?) and A.STREET LIKE (?) and A.city LIKE (?) and A.STATE LIKE (?) and ZIP LIKE (?)"\
-    ,cn, user,cst,cc,cs,cz)
+     where c.CLIENT_ID = U.USER_ID and c.CLIENT_ID =A.CLIENT_ID and bt.CLIENT_ID = c.CLIENT_ID and u.username LIKE '{}' \
+     and bt.TRADER_ID ='{}' and A.STREET LIKE '{}' and A.city LIKE '{}' and A.STATE LIKE '{}' and ZIP LIKE '{}'".format(cn, user,cst,cc,cs,cz)
+    print(query)
+    t = db.execute(query)
+    # t = db.execute("SELECT u.username,A.STREET ,A.CITY , A.STATE ,A.ZIP ,bt.NUMBER_OF_BITCOINS,bt.price,bt.DATE_TIME\
+    # ,bt.COMMISSION_TYPE,bt.COMMISSION_AMOUNT,bt.FINAL_STATUS FROM Client c , User U, Address A, BITCOIN_TRANSACTIONS bt\
+    #  where c.CLIENT_ID = U.USER_ID and c.CLIENT_ID =A.CLIENT_ID and bt.CLIENT_ID = c.CLIENT_ID and u.username=(?) \
+    #  and bt.TRADER_ID =(?) and A.STREET LIKE (?) and A.city LIKE (?) and A.STATE LIKE (?) and ZIP LIKE (?)",cn, user,cst,cc,cs,cz)
         # t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?)", user)
     print("\n\n asdddsdfdfsdfsfsdfd: ", t)
 
