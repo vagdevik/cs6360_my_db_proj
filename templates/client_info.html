@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+
+{% block heading %}
+<center>
+    <h1>Client Info</h1>
+</center>
+{% endblock %}
+
+{% block content %}
+
+    <form action="/client_info" method="post">
+        <div class="form-group">
+            <input class="form-control" name="Client_Name" placeholder="Client Name" type="text">
+            <input class="form-control" name="Client_Street" placeholder="Client Street" type="text">
+            <input class="form-control" name="Client_City" placeholder="Client City" type="text">
+            <input class="form-control" name="Client_State" placeholder="Client State" type="text">
+            <input class="form-control" name="Client_Zip" placeholder="Client Zip" type="text">
+            <button class="btn btn-primary" type="submit" >Search</button>
+        </div>
+        <div class="form-group">
+            <table width="100%">
+                <tr>
+                <th>Client Name</th>
+                <th>Client Address STREET</th>
+                    <th>Client Address CITY</th>
+                    <th>Client Address STATE</th>
+                    <th>Client Address ZIP</th>
+                <th>Number of Bitcoins</th>
+                <th>Price</th>
+                <th>Commission Type</th>
+                <th>Commission Amount</th>
+                <th>Date time</th>
+                <th>Final Status</th>
+                </tr>
+                {% for my_item in t %}
+
+                <tr>
+                <td>{{my_item.USERNAME}}</td>
+                   <td>C{{my_item.STREET}}</td>
+                    <td>C{{my_item.CITY}}</td>
+                    <td>C{{my_item.STATE}}</td>
+                <td>{{my_item.ZIP}}</td>
+                <td>{{my_item.NUMBER_OF_BITCOINS}}</td>
+                <td>{{my_item.PRICE}}</td>
+                <td>{{my_item.COMMISSION_TYPE}}</td>
+                <td>{{my_item.COMMISSION_AMOUNT}}</td>
+                <td>{{my_item.DATE_TIME}}</td>
+                <td>{{my_item.FINAL_STATUS}}</td>
+
+                </tr>
+
+                {% endfor %}
+            </table>
+
+        </div>
+
+    </form>
+
+
+{% endblock %}
