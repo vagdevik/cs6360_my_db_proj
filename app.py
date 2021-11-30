@@ -1,6 +1,7 @@
 import os
 import requests
 # import sqlite3
+import json
 from cs50 import SQL
 from tempfile import mkdtemp
 from flask_session import Session
@@ -279,6 +280,16 @@ def view_requests():
     user = session["user_id"]
     t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?)", user)
     print("\n\n ttt: ", t)
+    if(request.method == 'POST'):
+        accept = request.form.get("accept/decline")
+        print(accept)
+        accept_json = json.loads(accept)
+        print(accept_json)
+        insert_query = "UPDATE REQUESTS SET STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
+        db.execute(insert_query,accept_json["action"],accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+        t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?)", user)
+        print("\n\n ttt: ", t)
+
     return render_template("view_requests.html",t=t)
 
 @app.route('/buy', methods=['POST', 'GET'])

@@ -10,7 +10,7 @@
 
     <form action="/view_requests" method="post">
         <div class="form-group">
-            <table>
+            <table width="100%">
                 <tr>
                 <th>Client Id</th>
                 <th>Number of Bitcoins</th>
@@ -25,7 +25,9 @@
                 <td>{{my_item.NO_OF_BITCOINS}}</td>
                 <td>{{my_item.AMOUNT}}</td>
 
-                    <td><input type="radio" id="accept" name="accept" value="accept">Accept  </input><input type="radio" id="decline" name="decline" value="decline">Decline</input></td>
+                    <td><input type="radio" id="accept" name="accept/decline" value='{"client_id":"{{my_item.CLIENT_ID}}","trader_id":"{{my_item.TRADER_ID}}", "date_time": "{{my_item.DATE_TIME}}","action" : "accept"}'>Accept  </input>
+                    <input type="radio" id="decline" name="accept/decline" value='{"client_id":"{{my_item.CLIENT_ID}}","trader_id":"{{my_item.TRADER_ID}}", "date_time": "{{my_item.DATE_TIME}}","action" : "decline"}'>Decline    </input>
+                    <button class="btn btn-primary" type="submit" >Submit</button></td>
                 </tr>
                 {% endif %}
                 {% endfor %}
@@ -33,7 +35,6 @@
 
         </div>
 
-        <button class="btn btn-primary" type="submit">Submit</button>
     </form>
 
 
