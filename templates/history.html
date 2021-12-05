@@ -13,51 +13,52 @@
     <section class="hero is-success is-fullheight">
       <div class="hero-body">
         <div class="container">
-          <h1 class="title">
-            {{g.user.username}}'s Profile<br>
-            {% if g.user.role =='c' %}
-              Welcome to the Client View
-            {% elif g.user.role =='t' %}
-              Hey there, welcome to you the Trader!
-            {% elif g.user.role =='a' %}
-              This is your dashboard, dear Admin!
-            {% endif %}
 
-    <h1>Your Portfolio</h1>
+    <h1><center>Your Bitcoin Transaction History</center><br></h1>
 
-    <table class="table">
+       <table class="table">
       <thead>
         <tr>
-          <th scope="col">DATE_TIME</th>
+          <th scope="col">DateTime</th>
           <th scope="col"># of BitCoins</th>
-          <th scope="col">TOTAL</th>
+          <th scope="col">Price per BitCoin</th>
         </tr>
       </thead>
       <tbody>
-          {% set counter = namespace(value=0) %}
-          {% for i in previous_transactions %}
-          <tr>
-              <td>{{ i["DATE_TIME"] }}</th>
-              <td>{{ i["NUMBER_OF_BITCOINS"] }}</td>
-              <td>${{ "%.2f"|format(bitcoin_value * i["NUMBER_OF_BITCOINS"]) }}</td>
-              {% set counter.value = counter.value + 1 %}
+          {% for i in previous_bitcoin_transactions %}
+        <tr>
+          <td>{{ i["DATE_TIME"].upper() }}</th>
+          <td>{{ i["NUMBER_OF_BITCOINS"] }}</td>
+          <td>${{  "%.2f"|format(i["PRICE"]) }}</td>
           {% endfor %}
         </tr>
-          <tr>
-            <td>CASH</td>
-            <td></td>
-            <td>${{ "%.2f"|format(current_cash) }}</td>
-          </tr>
-          <tr>
-            <td></td>
-            <td></td>
-            <td>${{ "%.2f"|format((current_cash + total)) }}</td>
-          </tr>
       </tbody>
     </table>
-          </h1>
-          <br>
 
+    {% if previous_moneyPayment_transactions %}
+    <h2><center>Your Money Payment Transaction History</center><br></h2>
+
+       <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">DateTime</th>
+          <th scope="col">Trader ID</th>
+          <th scope="col">Amount</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+          {% for i in previous_moneyPayment_transactions %}
+        <tr>
+          <td>{{ i["DATE_TIME"].upper() }}</th>
+          <td>{{ i["TRADER_ID"] }}</td>
+          <td>${{  "%.2f"|format(i["AMOUNT"]) }}</td>
+          <td>{{ i["FINAL_STATUS"] }}</td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+    {% endif %}
         </div>
       </div>
     </section>

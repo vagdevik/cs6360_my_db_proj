@@ -1,12 +1,16 @@
 {% extends "layout.html" %}
 
-{% block heading %}
-<center>
-    <h1>Buy BitCoins</h1>
-</center>
-{% endblock %}
+
 
 {% block content %}
+<section class="hero is-success is-fullheight">
+      <div class="hero-body">
+        <div class="container">
+            {% block title %}
+                <center>
+                    <h1>Buy BitCoins</h1>
+                </center>
+            {% endblock %}
     <center>
         {% if error %}
         <font color="red">{{error}}</font>
@@ -23,6 +27,8 @@
 
         <button class="btn btn-primary" type="submit">Buy</button>
     </form>
-
+        </div>
+      </div>
+    </section>
 
 {% endblock %}

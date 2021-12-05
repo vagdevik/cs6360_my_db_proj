@@ -1,0 +1,38 @@
+{%extends "layout.html" %}
+
+
+{% block content %}
+<section class="hero is-success is-fullheight">
+      <div class="hero-body">
+        <div class="container">
+
+    {% block title %}
+        <center>
+          <h1>
+        Request Trader
+        </h1>
+        </center>
+    {% endblock %}
+
+    <center>
+        {% if error %}
+        <font color="red">{{error}}</font>
+        {% endif %}
+        {% if success_msg %}
+        <font color="green">{{success_msg}}</font>
+        {% endif %}
+    </center>
+<form action="/requestTrader" method="post">
+<div class="form-group">
+            <input class="form-control" name="trader_username" placeholder="Username of the Trader" type="text" required>
+        </div>
+        <p>What do you want your trader to do for you?</p>
+        <input type="radio" id="buy" name="trader_action" value="buy" required="required"><label for="buy">Buy Bitocins</label> &nbsp
+        <input type="radio" id="sell" name="trader_action" value="sell"><label for="sell">Sell Bitcoins</label>
+        <input class="form-control" name="bitcoins" placeholder="Bitcoins" type="number" required><br>
+        <button class="btn btn-primary" type="submit">Submit</button>
+      </form>
+        </div>
+      </div>
+    </section>
+{% endblock %}
