@@ -19,7 +19,7 @@
                 <th>Accept/Decline</th>
                 </tr>
                 {% for my_item in t %}
-                {% if my_item.STATUS == 'Pending' %}
+                {% if my_item.STATUS == '0' %}
                 <tr>
                 <td>{{my_item.CLIENT_ID}}</td>
                 <td>{{my_item.NO_OF_BITCOINS}}</td>

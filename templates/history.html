@@ -52,8 +52,8 @@
         <tr>
           <td>{{ i["DATE_TIME"].upper() }}</th>
           <td>{{ i["TRADER_ID"] }}</td>
-          <td>${{  "%.2f"|format(i["AMOUNT"]) }}</td>
-          <td>{{ i["FINAL_STATUS"] }}</td>
+          <td>${{"%.2f"|format(i["AMOUNT"]) }}</td>
+          <td>{{ 'accept' if i["FINAL_STATUS"] == '1' else 'pending' if i["FINAL_STATUS"] == '0' else 'decline' }}</td>
           {% endfor %}
         </tr>
       </tbody>
