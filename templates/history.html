@@ -14,7 +14,7 @@
       <div class="hero-body">
         <div class="container">
 
-    <h1><center>Your Transaction History</center><br></h1>
+    <h1><center>Your Bitcoin Transaction History</center><br></h1>
 
        <table class="table">
       <thead>
@@ -25,7 +25,7 @@
         </tr>
       </thead>
       <tbody>
-          {% for i in previous_transactions %}
+          {% for i in previous_bitcoin_transactions %}
         <tr>
           <td>{{ i["DATE_TIME"].upper() }}</th>
           <td>{{ i["NUMBER_OF_BITCOINS"] }}</td>
@@ -34,6 +34,31 @@
         </tr>
       </tbody>
     </table>
+
+    {% if previous_moneyPayment_transactions %}
+    <h2><center>Your Money Payment Transaction History</center><br></h2>
+
+       <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">DateTime</th>
+          <th scope="col">Trader ID</th>
+          <th scope="col">Amount</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+          {% for i in previous_moneyPayment_transactions %}
+        <tr>
+          <td>{{ i["DATE_TIME"].upper() }}</th>
+          <td>{{ i["TRADER_ID"] }}</td>
+          <td>${{  "%.2f"|format(i["AMOUNT"]) }}</td>
+          <td>{{ i["FINAL_STATUS"] }}</td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+    {% endif %}
         </div>
       </div>
     </section>

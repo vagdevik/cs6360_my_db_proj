@@ -20,21 +20,21 @@ db = SQL("sqlite:////Users/vag/Documents/dbproj/mysqlite_DB_COMMANDS.db")
 # db = sqlite3.connect("sqlite:///mysqlite_DB_COMMANDS.db")
 
 ######## dummy class to test role-based access ######### 
-class User:
-    def __init__(self, id, username, password, role):
-        self.id = id
-        self.username = username
-        self.password = password
-        self.role = role
+# class User:
+#     def __init__(self, id, username, password, role):
+#         self.id = id
+#         self.username = username
+#         self.password = password
+#         self.role = role
 
-    def __repr__(self):
-        return f'<User: {self.username}>'
+#     def __repr__(self):
+#         return f'<User: {self.username}>'
 
-users = []
+# users = []
 
-users.append(User(id=1, username='Anthony', password='password', role='c'))
-users.append(User(id=2, username='Becca', password='secret', role='a'))
-users.append(User(id=3, username='Carlos', password='somethingsimple', role='t'))
+# users.append(User(id=1, username='Anthony', password='password', role='c'))
+# users.append(User(id=2, username='Becca', password='secret', role='a'))
+# users.append(User(id=3, username='Carlos', password='somethingsimple', role='t'))
 
 ######## dummy #########
 
@@ -97,17 +97,21 @@ def before_request():
 
     if 'user_id' in session:
         print("\n session['user_id]:", session['user_id'])
-    #     for z in x:
-            # print("\n zz:",z)
-        x = db.execute("SELECT * from Client")
+        # record = [w for w in y if w['USER_ID']==session['user_id']]
+        # role = record[0]['ROLE']
+        # if role=='trader':
+        #     x = db.execute("SELECT * from Trader")
+        # else:
+        #     x = db.execute("SELECT * from Client")
+
         y = db.execute("SELECT * from User")
-        user = [z for z in x if z['CLIENT_ID'] == session['user_id']]
         role = [w for w in y if w['USER_ID']==session['user_id']]
-        print("\n user: ", user, " role: ", role)
+        print("role: ", role)
+        # user = [z for z in x if z['CLIENT_ID'] == session['user_id']]
+        
+        print("\n role: ", role)
         g.role = role[0]['ROLE']
-        g.username = role[0]['USERNAME']
-        g.user = user
-        print("\n g:", g.user)
+        g.user = role[0]['USERNAME']
 
 def login_required(f):
     @wraps(f)
@@ -138,8 +142,16 @@ def login():
         # user = [x for x in users if x.username == username][0]
         if user_record and user_record[0]['HPWD'] == password:
 
-            session['user_id'] = user_record[0]['USER_ID']
-            return redirect(url_for('profile'))
+            user_id = user_record[0]['USER_ID']
+
+            session['user_id'] = user_id
+
+            role = db.execute("SELECT ROLE FROM User where USER_ID=(?)", user_id)[0]['ROLE']
+
+            if role=='client':
+                return redirect(url_for('profile'))
+            else:
+                return redirect(url_for('bitinfo'))
 
         error = "Invalid credentials"
 
@@ -213,8 +225,11 @@ def signup():
             rec = db.execute("SELECT USER_ID FROM User WHERE  USERNAME=(?)", username)
             print("!!! rec: ", rec)
             user_id = rec[0]['USER_ID']
-            db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", user_id)
-            db.execute("INSERT INTO Address(CLIENT_ID, STREET, CITY, STATE, ZIP) VALUES(?, ?, ?, ?, ?)", user_id, street, city, state, zipcode )
+            if role=='client':
+                db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", user_id)
+                db.execute("INSERT INTO Address(CLIENT_ID, STREET, CITY, STATE, ZIP) VALUES(?, ?, ?, ?, ?)", user_id, street, city, state, zipcode )
+            elif role=='trader':
+                db.execute("INSERT INTO Trader(TRADER_ID) VALUES (?)", user_id)
             print("signup rec: ", rec)
             return render_template('login.html', msg="Account Created, You can Login now!")
     return render_template('signup.html', error=error)
@@ -250,8 +265,6 @@ def bitinfo():
 @app.route('/addToWallet', methods=['POST', 'GET'])
 @login_required
 def add_to_wallet():
-    """Buy BitCoins"""
-
     if request.method == "GET":
         return render_template("addmoney.html")
 
@@ -302,8 +315,8 @@ def buy():
 
         # current_cash = sqlite3.execute("SELECT LIQUID_CASH, NO_OF_BITCOINS FROM Client WHERE id = (?)", user)
 
-        current_cash = db.execute("SELECT LIQUID_CASH, NO_OF_BITCOINS FROM Client WHERE CLIENT_ID = (?)", user)
-        print("\n @@@ current_cash:", current_cash, "\n")
+        client_data = db.execute("SELECT LIQUID_CASH, NO_OF_BITCOINS, MEMBERSHIP FROM Client WHERE CLIENT_ID = (?)", user)
+        print("\n @@@ client_data:", client_data, "\n")
 
         print()
 
@@ -311,19 +324,36 @@ def buy():
         no_of_bitcoins = 0
         bitcoins_value = 0
         new_balance = 0
-        if current_cash:
-            print("\n\n ### current_cash: ", current_cash)
-            no_of_bitcoins = current_cash[0]['NO_OF_BITCOINS']
-            current_cash = current_cash[0]['LIQUID_CASH']
+        if client_data:
+            print("\n\n ### Entered : if client_data")
+            no_of_bitcoins = client_data[0]['NO_OF_BITCOINS']
+            current_cash = client_data[0]['LIQUID_CASH']
+            membership_type = client_data[0]['MEMBERSHIP']
             bitcoins_value = data * float(bitcoins)
-            new_balance = current_cash - bitcoins_value
+
+            commission_amount = 0
+
+            if membership_type=='g':
+                commission_amount = bitcoins_value*0.1
+            else:
+                commission_amount = bitcoins_value*0.2                
+
+            if commission_type=='crypto':
+                if membership_type=='g':
+                    bitcoins = (bitcoins_value*0.99)/float(data)
+                else:
+                    bitcoins = (bitcoins_value*0.98)/float(data)
+
+            new_balance = current_cash - (bitcoins_value + commission_amount)
+            
+            # new_balance = current_cash - bitcoins_value
 
         #if valid stock and user has enough funds
         if new_balance >= 0:
             print("\n\n !!! new_balance: ", new_balance)
             #  ##################################### to add fields for the COMMISSION_TYPE, COMMISSION_AMOUNT in the form, and plug those values below ############
             #  ##################################### add the membership upgradation and consideration code #######
-            db.execute("INSERT INTO BITCOIN_TRANSACTIONS (CLIENT_ID, NUMBER_OF_BITCOINS, PRICE, COMMISSION_TYPE, COMMISSION_AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?, ?, ?)", user, bitcoins, data, commission_type, 12, 1)
+            db.execute("INSERT INTO BITCOIN_TRANSACTIONS (CLIENT_ID, NUMBER_OF_BITCOINS, PRICE, COMMISSION_TYPE, COMMISSION_AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?, ?, ?)", user, bitcoins, data, commission_type, commission_amount, 1)
             #  #####################################
 
             db.execute("UPDATE Client SET LIQUID_CASH = (?), NO_OF_BITCOINS = (?)  WHERE CLIENT_ID = (?)", new_balance, float(bitcoins)+float(no_of_bitcoins), user)
@@ -362,7 +392,7 @@ def sell():
         # user tried to sell more shares than they own
         elif current_bitcoins < bitcoins:
             error = "You are trying to sell more number of bitcoins than you own. Please select smaller number."
-            return render_template("sell.html")
+            return render_template("sell.html", error=error)
 
         # else
         else:
@@ -421,32 +451,81 @@ def history():
 
     user = session["user_id"]
 
-    previous_transactions = db.execute("SELECT * FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
-    print("history: previous_transactions:", previous_transactions)
-    # current_cash = db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", user)
+    previous_bitcoin_transactions = db.execute("SELECT * FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
+    previous_moneyPayment_transactions = db.execute("SELECT * FROM MONEY_PAYMENT_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
+    print("history: previous_bitcoin_transactions:", previous_bitcoin_transactions, " previous_moneyPayment_transactions: ",previous_moneyPayment_transactions)
+    return render_template("history.html", previous_bitcoin_transactions=previous_bitcoin_transactions, previous_moneyPayment_transactions=previous_moneyPayment_transactions)
 
-    # print("\n\n$$$", len(previous_transactions), len(current_cash), "****\n\n")
-    # current_cash = current_cash[0]['LIQUID_CASH']
-    # bitcoin_value = float(requests.get('https://api.coindesk.com/v1/bpi/currentprice.json').json()["bpi"]["USD"]["rate"].replace(",", ""))
 
-    # total = 0.00
-    # counter = 0
-    # for i in previous_transactions:
-    #     total = total + (int(i["NUMBER_OF_BITCOINS"]) * bitcoin_value)
-    #     counter += 1
-    # print("\n counter: ", counter)
 
-    return render_template("history.html", previous_transactions=previous_transactions)
-
-@app.route('/requestTrader')
+@app.route('/requestTrader',methods=["GET", "POST"])
 @login_required
 def request_a_trader():
-    return render_template("requestTrader.html")
+    if request.method=="GET":
+        return render_template("requestTrader.html")
+    else:
+        client_id = session["user_id"]
+        trader_username = request.form.get("trader_username")
+        action = request.form.get("trader_action")
+        bitcoins = float(request.form.get("bitcoins"))
+        trader_id = db.execute("SELECT USER_ID from User where USERNAME = (?)", trader_username)[0]['USER_ID']
+        trader = db.execute("SELECT TRADER_ID from Trader where TRADER_ID = (?)", trader_id)
+        print("Traders fectched: ",trader)
+        print("TTTTTT")
+        if trader:
 
-@app.route('/payTrader')
+            if action=='sell':
+                client_current_bitcoins = db.execute("SELECT NO_OF_BITCOINS FROM Client WHERE CLIENT_ID = (?)", client_id)[0]["NO_OF_BITCOINS"]
+                print("client_current_bitcoins: ", client_current_bitcoins, "bitcoins: ", bitcoins, "client_current_bitcoins>=bitcoins: ",client_current_bitcoins<=bitcoins)
+                if client_current_bitcoins>=bitcoins:
+                    # final status = -1 means declined by trader, 0: pending, 1: accepted by the trader
+                    db.execute("INSERT INTO REQUESTS (CLIENT_ID, TRADER_ID, NO_OF_BITCOINS, STATUS) VALUES (?, ?, ?, ?)", client_id, trader_id, bitcoins, 0)
+                    success_msg = "Request Sent the Trader, Let's wait for the approval!"
+                    return render_template("requestTrader.html", success_msg=success_msg)
+                else:
+                    error = "You don’t have sufficient bitcoins to sell!"
+                    return render_template("requestTrader.html", error=error)
+            else:
+                print("Entered Buy")
+                db.execute("INSERT INTO REQUESTS (CLIENT_ID, TRADER_ID, NO_OF_BITCOINS, STATUS) VALUES (?, ?, ?, ?)", client_id, trader_id, bitcoins, 0)
+                success_msg = "Request Sent the Trader, Let's wait for the approval!"
+                return render_template("requestTrader.html", success_msg=success_msg)
+        return render_template("requestTrader.html", error="Trader not found.")
+
+
+
+
+
+
+@app.route('/payTrader', methods=["GET", "POST"])
 @login_required
 def pay_to_trader():
-    return render_template("payTrader.html")
+    if request.method == "GET":
+        return render_template("payTrader.html")
+    else:
+        client_id = session["user_id"]
+        trader_username = request.form.get("trader_username")
+        amount = float(request.form.get("amount"))
+        trader_id = db.execute("SELECT USER_ID from User where USERNAME = (?)", trader_username)[0]['USER_ID']
+        client_current_cash = float(db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", client_id)[0]['LIQUID_CASH'])
+        a = db.execute("SELECT TRADER_ID from Trader where TRADER_ID = (?)", trader_id)
+        if a:
+            if amount<=client_current_cash:
+                # net_amount = db.execute("SELECT NET_AMOUNT from NET_AMOUNT where TRADER_ID = (?) AND CLIENT_ID = (?)", trader_id, client_id)
+                # net_amount = net_amount + amount
+                # diff = client_current_cash - amount
+                # db.execute("UPDATE Client SET LIQUID_CASH = (?) WHERE CLIENT_ID = (?)", diff, client_id)
+                db.execute("INSERT INTO MONEY_PAYMENT_TRANSACTIONS (CLIENT_ID, TRADER_ID, AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?)", client_id, trader_id, amount, 1)
+                # db.execute("INSERT INTO NET_AMOUNT (CLIENT_ID, TRADER_ID, NET_AMOUNT) VALUES (?, ?, ?)", client_id, trader_id, amount)
+
+                success_msg = "Money Sent to the Trader, Let's wait for the approval!"
+                return render_template("payTrader.html", success_msg=success_msg)
+            else:
+                error = "You don’t have sufficient funds, Please add some to your wallet and then request a trader."
+                return render_template("payTrader.html", error=error)
+        else:
+            error = "There exists no trader with the given username."
+            return render_template("payTrader.html", error=error)
 
 
 if __name__ == "__main__":

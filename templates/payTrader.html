@@ -1,14 +1,35 @@
 {%extends "layout.html" %}
 
-{% block title %}
-    <center>
-      <h1>
-    Pay Money to a Trder
-    </h1>
-    </center>
-{% endblock %}
-
-
 {% block content %}
+<section class="hero is-success is-fullheight">
+      <div class="hero-body">
+        <div class="container">
+            {% block title %}
+                <center>
+                  <h1>
+                Pay Money to a Trder
+                </h1>
+                </center>
+            {% endblock %}
+    <center>
+        {% if error %}
+        <font color="red">{{error}}</font>
+        {% endif %}
+        {% if success_msg %}
+        <font color="green">{{success_msg}}</font>
+        {% endif %}
+    </center>
+
+    <form action="/payTrader" method="post">
+        <div class="form-group">
+            <input class="form-control" name="trader_username" placeholder="Name of the Trader" type="text" required><br>
+            <input class="form-control" name="amount" placeholder="Amount to Send" type="number" required>
+        </div>
+
+        <button class="btn btn-primary" type="submit">Send Money to Trader</button>
+    </form>
+        </div>
+      </div>
+    </section>
 
 {% endblock %}

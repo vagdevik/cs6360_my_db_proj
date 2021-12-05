@@ -40,7 +40,7 @@
                     <li><a href="{{url_for('add_to_wallet')}}">Add to Wallet</a></li>
                     <li><a href="{{url_for('request_a_trader')}}">Request a Trader</a></li>
                     <li><a href="{{url_for('pay_to_trader')}}">Pay a Trader</a></li>
-                    <li><a href="{{ url_for('history') }}">History</a></li>
+                    <li><a href="{{ url_for('history') }}">Transaction History</a></li>
                   {% elif  g.role =='admin' %}
                     <li><a href="{{ url_for('bitinfo') }}">BitInfo</a></li>
                 {% endif %}
