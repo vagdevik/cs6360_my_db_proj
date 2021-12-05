@@ -4,6 +4,7 @@ import requests
 import json
 from cs50 import SQL
 from tempfile import mkdtemp
+from datetime import datetime
 from flask_session import Session
 from functools import wraps
 from flask import flash
@@ -20,62 +21,6 @@ app.secret_key = 'super secret key'
 # db = SQL("sqlite:////Users/Amulya Atluri/PycharmProjects/cs6360_my_db_proj/mysqlite_DB_COMMANDS.db")
 db = SQL("sqlite:///mysqlite_DB_COMMANDS.db")
 
-######## dummy class to test role-based access ######### 
-# class User:
-#     def __init__(self, id, username, password, role):
-#         self.id = id
-#         self.username = username
-#         self.password = password
-#         self.role = role
-
-#     def __repr__(self):
-#         return f'<User: {self.username}>'
-
-# users = []
-
-# users.append(User(id=1, username='Anthony', password='password', role='c'))
-# users.append(User(id=2, username='Becca', password='secret', role='a'))
-# users.append(User(id=3, username='Carlos', password='somethingsimple', role='t'))
-
-######## dummy #########
-
-
-############## change this to triggers ###########
-# db.execute("DELETE FROM User")
-# db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Anthony', 'Anthony', 'Temoc','1212121212','1111111111','anthony@gmail.com','c','password')
-# userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Anthony")[0]['USER_ID']
-# db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
-# x = db.execute("SELECT * from Client")
-# y = db.execute("SELECT * from User")
-# # print("\n\n x0: ", x,"\n\n y0", y, "\n")
-
-# db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Bill', 'Bill', 'Temoc','1212121333','1111111333','bill@gmail.com','c','password')
-# userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Bill")[0]['USER_ID']
-# db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
-# x = db.execute("SELECT * from Client")
-# y = db.execute("SELECT * from User")
-# # print("\n\n x0: ", x,"\n\n y0", y, "\n")
-
-# # d.execute("CREATE TRIGGER add_to_client_table AFTER INSERT ON User BEGIN INSERT INTO Client SELECT CASE WHEN NEW.email NOT LIKE '%_@__%.__%' THEN END")
-
-
-# db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Becca', 'Becca', 'Temoc','1212121222','1111111122','becca@gmail.com','a','password')
-# userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Becca")[0]['USER_ID']
-# db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
-# x = db.execute("SELECT * from Client")
-# y = db.execute("SELECT * from User")
-# # print("\n\n x0: ", x,"\n\n y0", y, "\n")
-
-# db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 'Carlos', 'Carlos', 'Temoc','1212121233','1111111133','carlos@gmail.com','t','password')
-# userid = db.execute("SELECT USER_ID from User where USERNAME=(?)","Carlos")[0]['USER_ID']
-# db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", userid)
-# x = db.execute("SELECT * from Client")
-# y = db.execute("SELECT * from User")
-# print("\n\n x0: ", x,"\n\n y0", y, "\n")
-##############
-
-# x = db.execute("SELECT * from Client")
-# print("\n\n xxx: ", x)
 
 # Ensure responses aren't cached
 @app.after_request
@@ -98,12 +43,6 @@ def before_request():
 
     if 'user_id' in session:
         print("\n session['user_id]:", session['user_id'])
-        # record = [w for w in y if w['USER_ID']==session['user_id']]
-        # role = record[0]['ROLE']
-        # if role=='trader':
-        #     x = db.execute("SELECT * from Trader")
-        # else:
-        #     x = db.execute("SELECT * from Client")
 
         y = db.execute("SELECT * from User")
         role = [w for w in y if w['USER_ID']==session['user_id']]
@@ -473,6 +412,44 @@ def buy():
             membership_type = client_data[0]['MEMBERSHIP']
             bitcoins_value = data * float(bitcoins)
 
+            # curr_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            curr_datetime = datetime.now()
+            curr_month = curr_datetime.date().month
+            # curr_month = 1
+            curr_year = curr_datetime.date().year
+            # curr_year = 2022
+            desired_month = curr_month-1
+            desired_year = curr_year
+            if curr_month==1:
+                desired_month = 12
+                desired_year = curr_year-1
+
+            print("Current month is: ", curr_month)
+            print("Desired month is: ", desired_month, " Desired year is: ", desired_year)
+
+            txn_data = db.execute("SELECT DATE_TIME, strftime('%Y', DATE_TIME), strftime('%m', DATE_TIME), NUMBER_OF_BITCOINS, PRICE FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?) AND FINAL_STATUS=1", user)
+            print("txn_data: ", txn_data)
+
+            client_prev_txn_data = db.execute("SELECT DATE_TIME, NUMBER_OF_BITCOINS, PRICE FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?) AND strftime('%Y', DATE_TIME)=(?) AND strftime('%m', DATE_TIME)=(?) AND FINAL_STATUS=1", user, str(desired_year), str(desired_month))
+            print("client_prev_txn_data: ", client_prev_txn_data)
+
+            prev_txn_value = 0
+            if client_prev_txn_data:
+                
+                for d in client_prev_txn_data:
+                    prev_txn_value = prev_txn_value + abs(d['NUMBER_OF_BITCOINS'])*d['PRICE']
+
+            print("prev_txn_value: ", prev_txn_value)
+
+            if prev_txn_value>100000:
+                membership_type='g'
+                print("goldddddddd")
+                db.execute("UPDATE Client SET MEMBERSHIP = (?)  WHERE CLIENT_ID = (?)", 'g', user)
+
+            else:
+                membership_type='s'
+                db.execute("UPDATE Client SET MEMBERSHIP = (?)  WHERE CLIENT_ID = (?)", 's', user)
+
             commission_amount = 0
 
             if commission_type == 'crypto':
@@ -560,29 +537,6 @@ def sell():
             # db.execute("INSERT INTO BITCOIN_TRANSACTIONS(user_id, stock, shares, price) VALUES (?, ?, ?, ?)", user, symbol, "-" + shares, price.json()["latestPrice"])
             flash("Sold!", "primary")
             return redirect("/history")
-
-        # # if they sell all their stock
-        # if int(shares_owned[0]["shares"]) == int(shares):
-        #     # update cash balance
-        #     db.execute("UPDATE users SET cash = (?) WHERE id = (?)", new_balance, user)
-        #     # update portfolio
-        #     db.execute("DELETE FROM portfolio WHERE user_id = (?) AND symbol = (?)", user, symbol)
-        #     # update history
-        #     db.execute("INSERT INTO buy (user_id, stock, shares, price) VALUES (?, ?, ?, ?)", user, symbol, "-" + shares, price.json()["latestPrice"])
-        #     flash("Sold!", "primary")
-        #     return redirect("/")
-
-        # # if they sell less than all of their shares (from 1 - n shares)
-        # if int(shares_owned[0]["shares"]) > int(shares):
-        #     # update cash balance
-        #     db.execute("UPDATE users SET cash = (?) WHERE id = (?)", new_balance, user)
-        #     # update portfolio
-        #     db.execute("UPDATE portfolio SET shares = shares - (?) WHERE user_id = (?) AND symbol = (?)", shares, user, symbol)
-        #     #update history
-        #     db.execute("INSERT INTO buy (user_id, stock, shares, price) VALUES (?, ?, ?, ?)", user, symbol, "-" + shares, price.json()["latestPrice"])
-        #     flash("Sold!", "primary")
-        #     return redirect("/")
-
         return "error 500"
 
 # ####################################################################################
@@ -636,8 +590,6 @@ def request_a_trader():
 
 
 
-
-
 @app.route('/payTrader', methods=["GET", "POST"])
 @login_required
 def pay_to_trader():
@@ -647,7 +599,12 @@ def pay_to_trader():
         client_id = session["user_id"]
         trader_username = request.form.get("trader_username")
         amount = float(request.form.get("amount"))
-        trader_id = db.execute("SELECT USER_ID from User where USERNAME = (?)", trader_username)[0]['USER_ID']
+        trader = db.execute("SELECT USER_ID from User where USERNAME = (?)", trader_username)
+        if trader:
+            trader_id = trader[0]['USER_ID']
+        else:
+            error = "No such trader exists!"
+            return render_template("payTrader.html", error=error)
         client_current_cash = float(db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", client_id)[0]['LIQUID_CASH'])
         a = db.execute("SELECT TRADER_ID from Trader where TRADER_ID = (?)", trader_id)
         print(a)
