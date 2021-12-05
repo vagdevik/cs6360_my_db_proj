@@ -292,45 +292,6 @@ def view_requests():
 
     return render_template("view_requests.html",t=t)
 
-##########
-@app.route('/trader_accept', methods=['POST', 'GET'])
-@login_required
-def trader_accept():
-    user = session["user_id"]
-    t = db.execute("SELECT * from MONEY_PAYMENT_TRANSACTIONS WHERE TRADER_ID=(?)", user)
-    print("\n\n edsaxfef: ", t)
-    print(request.method)
-    if(request.method == 'POST'):
-        print('in posr')
-        accept = request.form.get("accept/decline")
-        print(accept)
-        accept_json = json.loads(accept)
-        print(accept_json)
-        insert_query = "UPDATE MONEY_PAYMENT_TRANSACTIONS SET FINAL_STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
-        db.execute(insert_query,accept_json["action"],accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
-        t = db.execute("SELECT * from MONEY_PAYMENT_TRANSACTIONS WHERE TRADER_ID=(?)", user)
-        print("\n\n ttt: ", t)
-    return render_template("trader_accept.html",t=t)
-
-##########
-# CREATE TABLE IF NOT EXISTS 'MONEY_PAYMENT_TRANSACTIONS'('AMOUNT' INTEGER,
-# 	'DATE_TIME' TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-# 	'TRADER_ID' INT,
-# 	'CLIENT_ID' INT,
-# 	'FINAL_STATUS' VARCHAR(1),
-# 	PRIMARY KEY ('CLIENT_ID', 'TRADER_ID')
-# 	-- FOREIGN KEY ('CLIENT_ID') REFERENCES 'Client' ON DELETE CASCADE,
-# 	-- FOREIGN KEY ('TRADER_ID') REFERENCES 'Trader' ON DELETE CASCADE
-# );
-@app.route('/client_test',methods=['POST'])
-def client_test():
-    accept_json = request.json;
-    ins_query = "insert into MONEY_PAYMENT_TRANSACTIONS (TRADER_ID,CLIENT_ID,FINAL_STATUS) values (?,?,?)"
-    db.execute(ins_query,accept_json["trader_id"],accept_json["client_id"], 1)
-    t = db.execute("SELECT * from MONEY_PAYMENT_TRANSACTIONS")
-    print(t)
-    return "sd"
-
 @app.route('/client_info', methods=['POST', 'GET'])
 @login_required
 def client_info():
