@@ -32,6 +32,8 @@
                     <li><a href="{{ url_for('bitinfo') }}">BitInfo</a></li>
                     <li><a href="{{url_for('buy')}}">Buy</a></li>
                     <li><a href="{{url_for('view_requests')}}">View Pending Requests</a></li>
+                    <li><a href="{{url_for('trader_accept')}}">Trader accept.</a></li>
+                    <li><a href="{{url_for('trader_btc_accept')}}">Trader BTC accept.</a></li>
                     <li><a href="{{url_for('client_info')}}">View Client Info</a></li>
                   {% elif  g.role =='client' %}
                     <li><a href="{{ url_for('profile') }}">Portfolio</a></li>

@@ -289,6 +289,50 @@ def add_to_wallet():
             return redirect(url_for('profile'))
         return "Something Unexpected!"
 
+
+@app.route('/trader_accept', methods=['POST', 'GET'])
+@login_required
+def trader_accept():
+    user = session["user_id"]
+    t = db.execute("SELECT * from MONEY_PAYMENT_TRANSACTIONS WHERE TRADER_ID=(?) and FINAL_STATUS=0", user)
+    print("\n\n edsaxfef: ", t)
+    print(request.method)
+    if(request.method == 'POST'):
+        print('in posr')
+        accept = request.form.get("accept/decline")
+        print(accept)
+        accept_json = json.loads(accept)
+        print(accept_json)
+        insert_query = "UPDATE MONEY_PAYMENT_TRANSACTIONS SET FINAL_STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
+        db.execute(insert_query,accept_json["action"],accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+        if(accept_json["action"] == "accept"):
+            t = db.execute("UPDATE NET_AMOUNT SET NET_AMOUNT = NET_AMOUNT + (?) where CLIENT_ID = (?) AND TRADER_ID =(?)",accept_json["AMOUNT"],accept_json["client_id"],accept_json["trader_id"])
+        t = db.execute("SELECT * from MONEY_PAYMENT_TRANSACTIONS WHERE TRADER_ID=(?) AND FINAL_STATUS=0", user)
+        print("\n\n ttt: ", t)
+    return render_template("trader_accept.html",t=t)
+
+
+@app.route('/trader_btc_accept', methods=['POST', 'GET'])
+@login_required
+def trader_btc_accept():
+    user = session["user_id"]
+    t = db.execute("SELECT * from BITCOIN_TRANSACTIONS WHERE TRADER_ID=(?) AND FINAL_STATUS=0", user)
+    # print("\n\n edsaxfef: ", t)
+    print(request.method)
+    if(request.method == 'POST'):
+        print('in posr')
+        accept = request.form.get("accept/decline")
+        print(accept)
+        accept_json = json.loads(accept)
+        print(accept_json)
+        insert_query = "UPDATE BITCOIN_TRANSACTIONS SET FINAL_STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
+        db.execute(insert_query,1 if accept_json["action"] == "accept" else 0,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+        if(accept_json["action"] == "accept"):
+            t = db.execute("UPDATE NET_AMOUNT SET NET_AMOUNT = (NET_AMOUNT - (?) - (?)) where CLIENT_ID = (?) AND TRADER_ID =(?)",accept_json["AMOUNT"],accept_json["COMMISSION_AMOUNT"],accept_json["client_id"],accept_json["trader_id"])
+        t = db.execute("SELECT * from BITCOIN_TRANSACTIONS WHERE TRADER_ID=(?) AND FINAL_STATUS=0", user)
+        print("\n\n ttt: ", t)
+    return render_template("trader_btc_accept.html",t=t)
+
 ##########
 @app.route('/view_requests', methods=['POST', 'GET'])
 @login_required
@@ -302,7 +346,7 @@ def view_requests():
         accept_json = json.loads(accept)
         print(accept_json)
         insert_query = "UPDATE REQUESTS SET STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
-        db.execute(insert_query,accept_json["action"],accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+        db.execute(insert_query,1 if accept_json["action"] == "accept" else 0,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
         t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?)", user)
         print("\n\n ttt: ", t)
 
@@ -562,13 +606,14 @@ def pay_to_trader():
         trader_id = db.execute("SELECT USER_ID from User where USERNAME = (?)", trader_username)[0]['USER_ID']
         client_current_cash = float(db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", client_id)[0]['LIQUID_CASH'])
         a = db.execute("SELECT TRADER_ID from Trader where TRADER_ID = (?)", trader_id)
+        print(a)
         if a:
             if amount<=client_current_cash:
                 # net_amount = db.execute("SELECT NET_AMOUNT from NET_AMOUNT where TRADER_ID = (?) AND CLIENT_ID = (?)", trader_id, client_id)
                 # net_amount = net_amount + amount
                 # diff = client_current_cash - amount
                 # db.execute("UPDATE Client SET LIQUID_CASH = (?) WHERE CLIENT_ID = (?)", diff, client_id)
-                db.execute("INSERT INTO MONEY_PAYMENT_TRANSACTIONS (CLIENT_ID, TRADER_ID, AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?)", client_id, trader_id, amount, 1)
+                db.execute("INSERT INTO MONEY_PAYMENT_TRANSACTIONS (CLIENT_ID, TRADER_ID, AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?)", client_id, trader_id, amount, 0)
                 # db.execute("INSERT INTO NET_AMOUNT (CLIENT_ID, TRADER_ID, NET_AMOUNT) VALUES (?, ?, ?)", client_id, trader_id, amount)
 
                 success_msg = "Money Sent to the Trader, Let's wait for the approval!"
