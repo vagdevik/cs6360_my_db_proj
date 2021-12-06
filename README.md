@@ -12,9 +12,9 @@ Anaconda
 
 
 
-conda create -n dbenv
+`conda create -n dbenv`
 
-conda activate dbenv
+`conda activate dbenv`
 
 
 
@@ -24,15 +24,15 @@ conda activate dbenv
 
 Traverse inside the `cs6360_my_db_proj` folder.
 
-cd cs6360_my_db_proj
+`cd cs6360_my_db_proj`
 
 Execute the following command:
 
-pip install -r requirements.txt
+`pip install -r requirements.txt`
 
 Run the following:
 
-python app.py
+`python app.py`
 
 
 
