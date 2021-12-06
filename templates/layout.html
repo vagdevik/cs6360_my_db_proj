@@ -13,6 +13,13 @@
         <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
      </head>
 
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+              {{ message }}
+            {% endfor %}
+        {% endif %}
+      {% endwith %}
      <body>
 
         <header>
