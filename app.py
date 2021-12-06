@@ -562,10 +562,14 @@ def request_a_trader():
     else:
         client_id = session["user_id"]
         trader_username = request.form.get("trader_username")
+        print(type(trader_username))
+        print(trader_username)
         action = request.form.get("trader_action")
         bitcoins = float(request.form.get("bitcoins"))
-        trader_id = db.execute("SELECT USER_ID from User where USERNAME = (?)", trader_username)[0]['USER_ID']
-        trader = db.execute("SELECT TRADER_ID from Trader where TRADER_ID = (?)", trader_id)
+        trader_id = db.execute("SELECT USER_ID from User where USERNAME = (?)", trader_username)
+        print("---------------------------------------------")
+        print(trader_id)
+        trader = db.execute("SELECT TRADER_ID from Trader where TRADER_ID = (?)", trader_id[0]["USER_ID"])
         print("Traders fectched: ",trader)
         print("TTTTTT")
         if trader:
@@ -574,7 +578,7 @@ def request_a_trader():
                 print("client_current_bitcoins: ", client_current_bitcoins, "bitcoins: ", bitcoins, "client_current_bitcoins>=bitcoins: ",client_current_bitcoins<=bitcoins)
                 if client_current_bitcoins>=bitcoins:
                     # final status = -1 means declined by trader, 0: pending, 1: accepted by the trader
-                    db.execute("INSERT INTO REQUESTS (CLIENT_ID, TRADER_ID, NO_OF_BITCOINS, STATUS) VALUES (?, ?, ?, ?)", client_id, trader_id, -1*bitcoins, 0)
+                    db.execute("INSERT INTO REQUESTS (CLIENT_ID, TRADER_ID, NO_OF_BITCOINS, STATUS, COMMISION_TYPE) VALUES (?, ?, ?, ?)", client_id, trader_id[0]["USER_ID"], -1*bitcoins, 0, request.form.get("commision_type"))
                     success_msg = "Request Sent the Trader, Let's wait for the approval!"
                     return render_template("requestTrader.html", success_msg=success_msg)
                 else:
@@ -582,7 +586,7 @@ def request_a_trader():
                     return render_template("requestTrader.html", error=error)
             else:
                 print("Entered Buy")
-                db.execute("INSERT INTO REQUESTS (CLIENT_ID, TRADER_ID, NO_OF_BITCOINS, STATUS, COMMISION_TYPE) VALUES (?, ?, ?, ?, ?)", client_id, trader_id, bitcoins, 0, request.form.get("commision_type"))
+                db.execute("INSERT INTO REQUESTS (CLIENT_ID, TRADER_ID, NO_OF_BITCOINS, STATUS, COMMISION_TYPE) VALUES (?, ?, ?, ?, ?)", client_id, trader_id[0]["USER_ID"], bitcoins, 0, request.form.get("commision_type"))
                 success_msg = "Request Sent the Trader, Let's wait for the approval!"
                 return render_template("requestTrader.html", success_msg=success_msg)
         return render_template("requestTrader.html", error="Trader not found.")
