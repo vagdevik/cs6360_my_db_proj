@@ -378,8 +378,7 @@ def view_requests():
         print(amount_data)
         req_status = 1 if accept_json["action"] == "accept" else -1
 
-        if amount_data is None:
-            print("aaaaaaaaaaaaaaaaaaaaa")
+        if not amount_data or amount_data is None:
             flash("Client does not have enough money.", "danger")
             err = 'You do not have enough money to accept this request'
 
