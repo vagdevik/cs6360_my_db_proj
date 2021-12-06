@@ -1,3 +1,4 @@
+import hashlib
 import os
 import requests
 # import sqlite3
@@ -68,17 +69,19 @@ def login():
 
         x = db.execute("SELECT * from Client")
         y = db.execute("SELECT * from User")
-        print("\n\n x1: ", len(x),"\n\n y1", len(y), "\n")
-        print("\n\n x1: ", x,"\n\n y1", y, "\n")
+        #print("\n\n x1: ", len(x),"\n\n y1", len(y), "\n")
+        #print("\n\n x1: ", x,"\n\n y1", y, "\n")
 
         session.pop('user_id', None)
 
         username = request.form['username']
         password = request.form['password']
+        password = hashlib.sha224(password.encode()).hexdigest()
+        #print(password)
 
         user_record = db.execute("SELECT HPWD, USER_ID from User where USERNAME = (?)", username)
 
-        print("***** ", user_record, password)
+        #print("***** ", user_record, password)
         # user = [x for x in users if x.username == username][0]
         if user_record and user_record[0]['HPWD'] == password:
 
@@ -149,7 +152,8 @@ def signup():
         else:
             fname = request.form['fname']
             lname = request.form['lname']
-            password = request.form['password']
+            password = hashlib.sha224(request.form['password'].encode()).hexdigest()
+            print(password)
             street = request.form['street']
             city = request.form['city']
             zipcode = request.form['zip']
@@ -159,18 +163,18 @@ def signup():
             cell = request.form['mobile']
             role = request.form.get("role")
 
-            print("role: ", role)
+            #print("role: ", role)
 
             db.execute("INSERT INTO User(USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", username, fname, lname, phone, cell, email, role, password)
             rec = db.execute("SELECT USER_ID FROM User WHERE  USERNAME=(?)", username)
-            print("!!! rec: ", rec)
+            #print("!!! rec: ", rec)
             user_id = rec[0]['USER_ID']
             if role=='client':
                 db.execute("INSERT INTO Client(CLIENT_ID) VALUES (?)", user_id)
                 db.execute("INSERT INTO Address(CLIENT_ID, STREET, CITY, STATE, ZIP) VALUES(?, ?, ?, ?, ?)", user_id, street, city, state, zipcode )
             elif role=='trader':
                 db.execute("INSERT INTO Trader(TRADER_ID) VALUES (?)", user_id)
-            print("signup rec: ", rec)
+            #print("signup rec: ", rec)
             return render_template('login.html', msg="Account Created, You can Login now!")
     return render_template('signup.html', error=error)
 
@@ -191,13 +195,13 @@ def bitinfo():
         response = requests.get(f"https://api.coindesk.com/v1/bpi/currentprice.json")
         data = response.json()
         bitvalue = round(float(data["bpi"]["USD"]["rate"].replace(",", "")),2)
-        print("y3", bitvalue) 
-        print("Y1")
+        #print("y3", bitvalue)
+        #print("Y1")
         response.raise_for_status()
-        print("y2")
+        #print("y2")
         return render_template("bitinfo.html", price=bitvalue)
     except requests.RequestException:
-        print("n1")
+        #print("n1")
         return None
 
 ############
@@ -211,19 +215,19 @@ def add_to_wallet():
     else:
         amount = request.form.get("amount")
 
-        print("\n AA: amount:", amount)
+        #print("\n AA: amount:", amount)
         user = session["user_id"]
 
         a = db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", user)
-        print("\n a: ", a)
+        #print("\n a: ", a)
         if a:
             total = float(amount) + float(a[0]['LIQUID_CASH'])
             db.execute("UPDATE Client SET LIQUID_CASH = (?) WHERE CLIENT_ID = (?)", total, user)
             b = db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", user)[0]['LIQUID_CASH']
-            print(b)
-            print('b-a:', b-float(a[0]['LIQUID_CASH']), ' amount:', amount)
+            #print(b)
+            #print('b-a:', b-float(a[0]['LIQUID_CASH']), ' amount:', amount)
             if b-float(a[0]['LIQUID_CASH'])==amount:
-                print("\n Yes!!")
+                #print("\n Yes!!")
                 flash("Something went wrong, Please try again.", "danger")
             return redirect(url_for('profile'))
         return "Something Unexpected!"
@@ -233,13 +237,13 @@ def add_to_wallet():
 @login_required
 def trader_accept():
     user = session["user_id"]
-    print(request.method)
+    #print(request.method)
     if(request.method == 'POST'):
-        print('in posr')
+        #print('in posr')
         accept = request.form.get("accept/decline")
-        print(accept)
+        #print(accept)
         accept_json = json.loads(accept)
-        print(accept_json)
+        #print(accept_json)
         insert_query = "UPDATE MONEY_PAYMENT_TRANSACTIONS SET FINAL_STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
         db.execute(insert_query,1 if accept_json["action"] == "accept" else 0,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
         
@@ -251,7 +255,7 @@ def trader_accept():
             else:
                 t = db.execute("insert into net_amount (net_amount, client_id, trader_id) values (?,?,?)",accept_json["amount"],accept_json["client_id"],accept_json["trader_id"])
     t = db.execute("SELECT * from MONEY_PAYMENT_TRANSACTIONS WHERE TRADER_ID=(?) and FINAL_STATUS=0", user)
-    print("\n\n ttt: ", t)
+    #print("\n\n ttt: ", t)
     return render_template("trader_accept.html",t=t)
 
 
@@ -283,7 +287,7 @@ def trader_accept():
 def view_requests():
     user = session["user_id"]
     t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", user)
-    print("\n\n ttt: ", t)
+    #print("\n\n ttt: ", t)
     if(request.method == 'POST'):
         response = requests.get('https://api.coindesk.com/v1/bpi/currentprice.json')
         
@@ -293,13 +297,13 @@ def view_requests():
         data = round(float(response.json()["bpi"]["USD"]["rate"].replace(",", "")))
 
         accept = request.form.get("accept/decline")
-        print(accept)
+        #print(accept)
         accept_json = json.loads(accept)
-        print(accept_json)
+        #print(accept_json)
         commission_type = db.execute("select commision_type,NO_OF_BITCOINS from requests  WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)",accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
         insert_query = "UPDATE REQUESTS SET STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
         
-        print(commission_type)
+        #print(commission_type)
 
         db.execute(insert_query,1 if accept_json["action"] == "accept" else -1,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
         client_data = db.execute("SELECT LIQUID_CASH, NO_OF_BITCOINS, MEMBERSHIP FROM Client WHERE CLIENT_ID = (?)", accept_json["client_id"])
@@ -327,12 +331,12 @@ def view_requests():
             new_balance = current_cash - (bitcoins_value + commission_amount)
         else:
             bitcoins = ((bitcoins_value)/float(data))
-        print(bitcoins)
+        #print(bitcoins)
         
-        db.execute("insert into BITCOIN_TRANSACTIONS (NUMBER_OF_BITCOINS,PRICE,COMMISSION_TYPE,COMMISSION_AMOUNT,CLIENT_ID,TRADER_ID,FINAL_STATUS) values (?,?,?,?,?,?,?)",bitcoins,bitcoins_value,commission_type[0]['commision_type'],commission_amount,accept_json["client_id"],accept_json["trader_id"],1)
+        db.execute("insert into BITCOIN_TRANSACTIONS (NUMBER_OF_BITCOINS,PRICE,COMMISSION_TYPE,COMMISSION_AMOUNT,CLIENT_ID,TRADER_ID,FINAL_STATUS) values (?,?,?,?,?,?,?)",bitcoins,data,commission_type[0]['commision_type'],commission_amount,accept_json["client_id"],accept_json["trader_id"],1)
         db.execute("update client set liquid_cash = (?), no_of_bitcoins = no_of_bitcoins + (?) where client_id = (?)",new_balance,bitcoins,accept_json["client_id"])
         t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", accept_json["trader_id"],)
-        print("\n\n ttt: ", t)
+        #print("\n\n ttt: ", t)
 
     return render_template("view_requests.html",t=t)
 
@@ -346,15 +350,15 @@ def client_info():
     cn = cc = cs = cz =cst =None
     if(request.method == 'POST'):
         cn = request.form.get("Client_Name") +'%'
-        print(cn)
+        #print(cn)
         cst = request.form.get("Client_Street") +'%'
-        print(cst)
+        #(cst)
         cc = request.form.get("Client_City") +'%'
-        print(cc)
+        #print(cc)
         cs = request.form.get("Client_State") +'%'
-        print(cs)
+        #print(cs)
         cz = request.form.get("Client_Zip") +'%'
-        print(cz)
+        #print(cz)
 
     query = "SELECT u.username,A.STREET ,A.CITY , A.STATE ,A.ZIP ,bt.NUMBER_OF_BITCOINS,bt.price,bt.DATE_TIME\
     ,bt.COMMISSION_TYPE,bt.COMMISSION_AMOUNT,bt.FINAL_STATUS FROM Client c , User U, Address A, BITCOIN_TRANSACTIONS bt\
@@ -367,7 +371,7 @@ def client_info():
     #  where c.CLIENT_ID = U.USER_ID and c.CLIENT_ID =A.CLIENT_ID and bt.CLIENT_ID = c.CLIENT_ID and u.username=(?) \
     #  and bt.TRADER_ID =(?) and A.STREET LIKE (?) and A.city LIKE (?) and A.STATE LIKE (?) and ZIP LIKE (?)",cn, user,cst,cc,cs,cz)
         # t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?)", user)
-    print("\n\n asdddsdfdfsdfsfsdfd: ", t)
+    #print("\n\n asdddsdfdfsdfsfsdfd: ", t)
 
     return render_template("client_info.html",t=t)
 
@@ -392,21 +396,21 @@ def buy():
             return render_template("buy.html")
         data = round(float(response.json()["bpi"]["USD"]["rate"].replace(",", "")))
         user = session["user_id"]
-        print("\n uuu: userid:", user, " bitcoins: ", bitcoins, " commission_type: ", commission_type, " bitvalue: ", data)
+        #print("\n uuu: userid:", user, " bitcoins: ", bitcoins, " commission_type: ", commission_type, " bitvalue: ", data)
 
         # current_cash = sqlite3.execute("SELECT LIQUID_CASH, NO_OF_BITCOINS FROM Client WHERE id = (?)", user)
 
         client_data = db.execute("SELECT LIQUID_CASH, NO_OF_BITCOINS, MEMBERSHIP FROM Client WHERE CLIENT_ID = (?)", user)
-        print("\n @@@ client_data:", client_data, "\n")
+        #print("\n @@@ client_data:", client_data, "\n")
 
-        print()
+        #()
 
         # if user in Client Table
         no_of_bitcoins = 0
         bitcoins_value = 0
         new_balance = 0
         if client_data:
-            print("\n\n ### Entered : if client_data")
+            #print("\n\n ### Entered : if client_data")
             no_of_bitcoins = client_data[0]['NO_OF_BITCOINS']
             current_cash = client_data[0]['LIQUID_CASH']
             membership_type = client_data[0]['MEMBERSHIP']
@@ -424,14 +428,14 @@ def buy():
                 desired_month = 12
                 desired_year = curr_year-1
 
-            print("Current month is: ", curr_month)
-            print("Desired month is: ", desired_month, " Desired year is: ", desired_year)
+            #print("Current month is: ", curr_month)
+            #print("Desired month is: ", desired_month, " Desired year is: ", desired_year)
 
             txn_data = db.execute("SELECT DATE_TIME, strftime('%Y', DATE_TIME), strftime('%m', DATE_TIME), NUMBER_OF_BITCOINS, PRICE FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?) AND FINAL_STATUS=1", user)
-            print("txn_data: ", txn_data)
+            #print("txn_data: ", txn_data)
 
             client_prev_txn_data = db.execute("SELECT DATE_TIME, NUMBER_OF_BITCOINS, PRICE FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?) AND strftime('%Y', DATE_TIME)=(?) AND strftime('%m', DATE_TIME)=(?) AND FINAL_STATUS=1", user, str(desired_year), str(desired_month))
-            print("client_prev_txn_data: ", client_prev_txn_data)
+            #print("client_prev_txn_data: ", client_prev_txn_data)
 
             prev_txn_value = 0
             if client_prev_txn_data:
@@ -439,11 +443,11 @@ def buy():
                 for d in client_prev_txn_data:
                     prev_txn_value = prev_txn_value + abs(d['NUMBER_OF_BITCOINS'])*d['PRICE']
 
-            print("prev_txn_value: ", prev_txn_value)
+            #print("prev_txn_value: ", prev_txn_value)
 
             if prev_txn_value>100000:
                 membership_type='g'
-                print("goldddddddd")
+                #print("goldddddddd")
                 db.execute("UPDATE Client SET MEMBERSHIP = (?)  WHERE CLIENT_ID = (?)", 'g', user)
 
             else:
@@ -469,24 +473,24 @@ def buy():
 
         #if valid stock and user has enough funds
         if new_balance >= 0:
-            print("\n\n !!! new_balance: ", new_balance)
+            #print("\n\n !!! new_balance: ", new_balance)
             #  ##################################### to add fields for the COMMISSION_TYPE, COMMISSION_AMOUNT in the form, and plug those values below ############
             #  ##################################### add the membership upgradation and consideration code #######
             db.execute("INSERT INTO BITCOIN_TRANSACTIONS (CLIENT_ID, NUMBER_OF_BITCOINS, PRICE, COMMISSION_TYPE, COMMISSION_AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?, ?, ?)", user, bitcoins, data, commission_type, commission_amount, 1)
             #  #####################################
 
             db.execute("UPDATE Client SET LIQUID_CASH = (?), NO_OF_BITCOINS = (?)  WHERE CLIENT_ID = (?)", new_balance, float(bitcoins)+float(no_of_bitcoins), user)
-            print("\n\n KK:",user)
+            #print("\n\n KK:",user)
             x = db.execute("SELECT * from Client")
-            print("\n\n xxx: ", x)
+            #print("\n\n xxx: ", x)
             t = db.execute("SELECT * from BITCOIN_TRANSACTIONS WHERE CLIENT_ID=(?)", user)
-            print("\n\n ttt: ", t)
+            #print("\n\n ttt: ", t)
             flash("Bought!", "primary")
             return redirect("/profile")
 
         # if not enough funds in account
         elif new_balance < 0:
-            print("\n\n @@@ Entered else in Buy!!!\n\n")
+            #print("\n\n @@@ Entered else in Buy!!!\n\n")
             error = "You do not have enough funds in account."
             return render_template("buy.html", error=error)
 
@@ -547,10 +551,18 @@ def history():
 
     user = session["user_id"]
 
-    previous_bitcoin_transactions = db.execute("SELECT * FROM BITCOIN_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
+    previous_bitcoin_transactions = db.execute("SELECT * FROM BITCOIN_TRANSACTIONS b WHERE b.CLIENT_ID = (?)", user)
+    username = db.execute("SELECT USER_ID , USERNAME FROM user u")
+    #print(len(username))
+    #print()
+    usernames={}
+    for i in range(len(username)):
+        usernames[username[i]["USER_ID"]] = username[i]["USERNAME"]
+    #print(usernames)
+
     previous_moneyPayment_transactions = db.execute("SELECT * FROM MONEY_PAYMENT_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
-    print("history: previous_bitcoin_transactions:", previous_bitcoin_transactions, " previous_moneyPayment_transactions: ",previous_moneyPayment_transactions)
-    return render_template("history.html", previous_bitcoin_transactions=previous_bitcoin_transactions, previous_moneyPayment_transactions=previous_moneyPayment_transactions)
+    #print("history: previous_bitcoin_transactions:", previous_bitcoin_transactions, " previous_moneyPayment_transactions: ",previous_moneyPayment_transactions)
+    return render_template("history.html", previous_bitcoin_transactions=previous_bitcoin_transactions, previous_moneyPayment_transactions=previous_moneyPayment_transactions, usernames = usernames)
 
 
 
@@ -562,20 +574,20 @@ def request_a_trader():
     else:
         client_id = session["user_id"]
         trader_username = request.form.get("trader_username")
-        print(type(trader_username))
-        print(trader_username)
+        #print(type(trader_username))
+        #print(trader_username)
         action = request.form.get("trader_action")
         bitcoins = float(request.form.get("bitcoins"))
         trader_id = db.execute("SELECT USER_ID from User where USERNAME = (?)", trader_username)
-        print("---------------------------------------------")
-        print(trader_id)
+        #print("---------------------------------------------")
+        #print(trader_id)
         trader = db.execute("SELECT TRADER_ID from Trader where TRADER_ID = (?)", trader_id[0]["USER_ID"])
-        print("Traders fectched: ",trader)
-        print("TTTTTT")
+        #print("Traders fectched: ",trader)
+        #print("TTTTTT")
         if trader:
             if action=='sell':
                 client_current_bitcoins = db.execute("SELECT NO_OF_BITCOINS FROM Client WHERE CLIENT_ID = (?)", client_id)[0]["NO_OF_BITCOINS"]
-                print("client_current_bitcoins: ", client_current_bitcoins, "bitcoins: ", bitcoins, "client_current_bitcoins>=bitcoins: ",client_current_bitcoins<=bitcoins)
+                #print("client_current_bitcoins: ", client_current_bitcoins, "bitcoins: ", bitcoins, "client_current_bitcoins>=bitcoins: ",client_current_bitcoins<=bitcoins)
                 if client_current_bitcoins>=bitcoins:
                     # final status = -1 means declined by trader, 0: pending, 1: accepted by the trader
                     db.execute("INSERT INTO REQUESTS (CLIENT_ID, TRADER_ID, NO_OF_BITCOINS, STATUS, COMMISION_TYPE) VALUES (?, ?, ?, ?)", client_id, trader_id[0]["USER_ID"], -1*bitcoins, 0, request.form.get("commision_type"))
@@ -585,7 +597,7 @@ def request_a_trader():
                     error = "You don’t have sufficient bitcoins to sell!"
                     return render_template("requestTrader.html", error=error)
             else:
-                print("Entered Buy")
+                #print("Entered Buy")
                 db.execute("INSERT INTO REQUESTS (CLIENT_ID, TRADER_ID, NO_OF_BITCOINS, STATUS, COMMISION_TYPE) VALUES (?, ?, ?, ?, ?)", client_id, trader_id[0]["USER_ID"], bitcoins, 0, request.form.get("commision_type"))
                 success_msg = "Request Sent the Trader, Let's wait for the approval!"
                 return render_template("requestTrader.html", success_msg=success_msg)
@@ -611,7 +623,7 @@ def pay_to_trader():
             return render_template("payTrader.html", error=error)
         client_current_cash = float(db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", client_id)[0]['LIQUID_CASH'])
         a = db.execute("SELECT TRADER_ID from Trader where TRADER_ID = (?)", trader_id)
-        print(a)
+        #print(a)
         if a:
             if amount<=client_current_cash:
                 # net_amount = db.execute("SELECT NET_AMOUNT from NET_AMOUNT where TRADER_ID = (?) AND CLIENT_ID = (?)", trader_id, client_id)
