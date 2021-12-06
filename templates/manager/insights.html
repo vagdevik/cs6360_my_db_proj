@@ -1,0 +1,66 @@
+-{% extends "layout.html" %}
+
+{% block heading %}
+<center>
+    <h1>View Insights</h1>
+</center>
+{% endblock %}
+
+{% block content %}
+<section class="hero is-success is-fullheight">
+    <div class="hero-body">
+      <div class="container">
+          <center>
+    <form action="/insights" method="post">
+        <label for="insights">Choose a car:</label>
+
+        <select name="insights" id="cars">
+        <option value="day">Day</option>
+        <option value="month">Month</option>
+        <option value="week">Week</option>
+        <option value="custom">Custom</option>
+        </select>
+        <br><br>
+        <input type="submit" value="Submit">
+    </form>
+
+</center>
+
+    <p>Bitcoins sold</p>
+    <table width="100%">
+        <tr>
+        <th>No. of transactions</th>
+        <th>No. of bitcoins</th>
+        <th>Transaction value</th>
+        </tr>
+        {% for my_item in sell_items %}
+        <tr>
+        <td>{{my_item.total_no_of_txns}}</td>
+        <td>{{my_item.total_bitcoins}}</td>
+        <td>{{my_item.sell_txn_value}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    
+    <br><br>
+    
+    <p>Bitcoins bought</p>
+    <table width="100%">
+        <tr>
+        <th>No. of transaction</th>
+        <th>No. of bitcoins</th>
+        <th>Transaction value</th>
+        </tr>
+        {% for my_item in buy_items %}
+        <tr>
+        <td>{{my_item.total_no_of_txns}}</td>
+        <td>{{my_item.total_bitcoins}}</td>
+        <td>{{my_item.buy_txn_value}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+</div>
+</section>
+{% endblock %}

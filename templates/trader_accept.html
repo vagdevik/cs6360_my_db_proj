@@ -1,0 +1,36 @@
+-{% extends "layout.html" %}
+
+{% block heading %}
+<center>
+    <h1>View Bitcoin Transactions</h1>
+</center>
+{% endblock %}
+
+{% block content %}
+
+    <form action="/trader_accept" method="post">
+        <div class="form-group">
+            <table width="100%">
+                <tr>
+                <th>Client Id</th>
+                <th>Amount</th>
+
+                <th>Accept/Decline</th>
+                </tr>
+                {% for my_item in t %}
+                <tr>
+                <td>{{my_item.CLIENT_ID}}</td>
+                <td>{{my_item.AMOUNT}}</td>
+                    <td><input type="radio" id="accept" name="accept/decline" value='{"client_id":"{{my_item.CLIENT_ID}}","trader_id":"{{my_item.TRADER_ID}}", "amount":"{{my_item.AMOUNT}}","date_time": "{{my_item.DATE_TIME}}","action" : "accept"}'>Accept  </input>
+                    <input type="radio" id="decline" name="accept/decline" value='{"client_id":"{{my_item.CLIENT_ID}}","trader_id":"{{my_item.TRADER_ID}}","amount":"{{my_item.AMOUNT}}", "date_time": "{{my_item.DATE_TIME}}","action" : "decline"}'>Decline    </input>
+                    <button class="btn btn-primary" type="submit" >Submit</button></td>
+                </tr>
+                {% endfor %}
+            </table>
+
+        </div>
+
+    </form>
+
+
+{% endblock %}

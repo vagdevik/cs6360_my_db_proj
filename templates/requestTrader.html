@@ -26,6 +26,10 @@
 <div class="form-group">
             <input class="form-control" name="trader_username" placeholder="Username of the Trader" type="text" required>
         </div>
+        <p>Commision Type</p>
+        <input type="radio" id="fiat" name="commision_type" value="Fiat" required="required"><label for="fiat">Fiat</label> &nbsp
+        <input type="radio" id="btc" name="commision_type" value="BTC"><label for="btc">BTC</label>
+        
         <p>What do you want your trader to do for you?</p>
         <input type="radio" id="buy" name="trader_action" value="buy" required="required"><label for="buy">Buy Bitocins</label> &nbsp
         <input type="radio" id="sell" name="trader_action" value="sell"><label for="sell">Sell Bitcoins</label>

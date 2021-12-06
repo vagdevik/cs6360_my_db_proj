@@ -16,6 +16,10 @@ header {
   margin: 0px 20px;
 }
 
+td{
+  text-align: center;
+}
+
 .name {
   float: right;
   font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;

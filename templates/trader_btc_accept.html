@@ -1,0 +1,39 @@
+-{% extends "layout.html" %}
+
+{% block heading %}
+<center>
+    <h1>View Pending BTC Transactions</h1>
+</center>
+{% endblock %}
+
+{% block content %}
+
+    <form action="/trader_btc_accept" method="post">
+        <div class="form-group">
+            <table width="100%">
+                <tr>
+                <th>Client Id</th>
+                <th>Number of Bitcoins</th>
+
+                <th>Accept/Decline</th>
+                </tr>
+                {% for my_item in t %}
+                {% if my_item.FINAL_STATUS == '1' %}
+                <tr>
+                <td>{{my_item.CLIENT_ID}}</td>
+                <td>{{my_item.NUMBER_OF_BITCOINS}}</td>
+
+                    <td><input type="radio" id="accept" name="accept/decline" value='{"client_id":"{{my_item.CLIENT_ID}}","trader_id":"{{my_item.TRADER_ID}}", "date_time": "{{my_item.DATE_TIME}}","action" : "accept"}'>Accept  </input>
+                    <input type="radio" id="decline" name="accept/decline" value='{"client_id":"{{my_item.CLIENT_ID}}","trader_id":"{{my_item.TRADER_ID}}", "date_time": "{{my_item.DATE_TIME}}","action" : "decline"}'>Decline    </input>
+                    <button class="btn btn-primary" type="submit" >Submit</button></td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </table>
+
+        </div>
+
+    </form>
+
+
+{% endblock %}

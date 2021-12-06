@@ -22,6 +22,8 @@
           <th scope="col">DateTime</th>
           <th scope="col"># of BitCoins</th>
           <th scope="col">Price per BitCoin</th>
+            <th scope="col">Bought By</th>
+            <th scope="col">Status</th>
         </tr>
       </thead>
       <tbody>
@@ -30,6 +32,19 @@
           <td>{{ i["DATE_TIME"].upper() }}</th>
           <td>{{ i["NUMBER_OF_BITCOINS"] }}</td>
           <td>${{  "%.2f"|format(i["PRICE"]) }}</td>
+           {% if i["TRADER_ID"] != None %}
+            <td>{{usernames[i["TRADER_ID"]]}}</td>
+            {% else %}
+            <td>Self</td>
+            {% endif %}
+
+            {% if i["FINAL_STATUS"] == '1' and i["TRADER_ID"] != None %}
+            <td>accepted by trader</td>
+            {% elif i["TRADER_ID"] != None %}
+            <td>declined by trader</td>
+            {% elif i["TRADER_ID"] == None %}
+            <td>-</td>
+            {% endif %}
           {% endfor %}
         </tr>
       </tbody>
@@ -42,7 +57,7 @@
       <thead>
         <tr>
           <th scope="col">DateTime</th>
-          <th scope="col">Trader ID</th>
+          <th scope="col">Trader</th>
           <th scope="col">Amount</th>
           <th scope="col">Status</th>
         </tr>
@@ -51,9 +66,9 @@
           {% for i in previous_moneyPayment_transactions %}
         <tr>
           <td>{{ i["DATE_TIME"].upper() }}</th>
-          <td>{{ i["TRADER_ID"] }}</td>
-          <td>${{  "%.2f"|format(i["AMOUNT"]) }}</td>
-          <td>{{ i["FINAL_STATUS"] }}</td>
+          <td>{{usernames[i["TRADER_ID"]]}}</td>
+          <td>${{"%.2f"|format(i["AMOUNT"]) }}</td>
+          <td>{{ 'accept' if i["FINAL_STATUS"] == '1' else 'pending' if i["FINAL_STATUS"] == '0' else 'decline' }}</td>
           {% endfor %}
         </tr>
       </tbody>

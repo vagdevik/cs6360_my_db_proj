@@ -1,0 +1,93 @@
+-{% extends "layout.html" %}
+
+{% block heading %}
+<center>
+    <h1>View Insights</h1>
+</center>
+{% endblock %}
+
+{% block content %}
+<section class="hero is-success is-fullheight">
+    <div class="hero-body">
+      <div class="container">
+          <center>
+<form action="/custom_insights" onsubmit="return compare();" method="post">
+    <div name = "aggregate">
+        <div>
+            <div>Start:</div>
+            <div><input type="date" id="startDate" name="startDate" required></input></div>
+        </div>
+
+        <div>
+            <div>End:</div>
+            <div><input type="date" id="endDate" name="endDate" required></input></div>
+        </div>
+        <br><br>
+        <input type="submit" value="Submit">
+    </div>
+
+</form>
+
+</center>
+
+<br><br>
+<p>Bitcoins sold</p>
+<br><br>
+<table width="100%">
+    <tr>
+    <th>No. of users</th>
+    <th>No. of bitcoins</th>
+    <th>Transaction value</th>
+    </tr>
+    {% for my_item in sell_items %}
+    <tr>
+    <td>{{my_item.total_no_of_txns}}</td>
+    <td>{{my_item.total_bitcoins}}</td>
+    <td>{{my_item.sell_txn_value}}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<br><br>
+
+<p>Bitcoins bought</p>
+<br><br>
+<table width="100%">
+    <tr>
+    <th>No. of transaction</th>
+    <th>No. of bitcoins</th>
+    <th>Transaction value</th>
+    </tr>
+    {% for my_item in buy_items %}
+    <tr>
+    <td>{{my_item.total_no_of_txns}}</td>
+    <td>{{my_item.total_bitcoins}}</td>
+    <td>{{my_item.buy_txn_value}}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+</div>
+</section>
+
+{% endblock %}
+
+{% block script %}
+<script>
+function compare()
+{
+    var startDt = document.getElementById("startDate").value;
+    var endDt = document.getElementById("endDate").value;
+    console.log(startDt)
+    console.log(endDt)
+    if( (new Date(startDt).getTime() < new Date(endDt).getTime()))
+    {
+        return true
+    }
+    else{
+        alert("Start date must be less than end date.");
+        return false
+    }
+}
+</script>
+{% endblock %}
