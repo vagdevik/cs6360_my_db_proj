@@ -330,14 +330,20 @@ def trader_accept():
 def view_requests():
     user = session["user_id"]
     t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", user)
+
+    response = requests.get('https://api.coindesk.com/v1/bpi/currentprice.json')
+    if response.status_code == 500 or response.status_code == 404:
+        flash("Something went wrong, Please try again.", "danger")
+        return render_template("buy.html")
+    data = round(float(response.json()["bpi"]["USD"]["rate"].replace(",", "")))
+    for i in range(0,len(t)):
+        t[i]['AMOUNT'] = data*t[i]['NO_OF_BITCOINS']
+
     #print("\n\n ttt: ", t)
     if(request.method == 'POST'):
-        response = requests.get('https://api.coindesk.com/v1/bpi/currentprice.json')
         
-        if response.status_code == 500 or response.status_code == 404:
-            flash("Something went wrong, Please try again.", "danger")
-            return render_template("buy.html")
-        data = round(float(response.json()["bpi"]["USD"]["rate"].replace(",", "")))
+        
+
 
         accept = request.form.get("accept/decline")
         #print(accept)
@@ -348,37 +354,65 @@ def view_requests():
         
         #print(commission_type)
 
-        db.execute(insert_query,1 if accept_json["action"] == "accept" else -1,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+        
         client_data = db.execute("SELECT LIQUID_CASH, NO_OF_BITCOINS, MEMBERSHIP FROM Client WHERE CLIENT_ID = (?)", accept_json["client_id"])
+        amount_data = db.execute("SELECT NET_AMOUNT FROM NET_AMOUNT WHERE TRADER_ID = (?) AND CLIENT_ID = (?)",accept_json["client_id"],accept_json["trader_id"])
         
-        
-        current_cash = client_data[0]['LIQUID_CASH']
+        req_status = 1 if accept_json["action"] == "accept" else -1
+
+        if amount_data is not None:
+            flash("Client does not have enough money.", "danger")
+            return render_template('view_requests.html',t=t)
+
+        current_cash = amount_data[0]['NET_AMOUNT']
+
         membership_type = client_data[0]['MEMBERSHIP']
         bitcoins_value = data * float(commission_type[0]['NO_OF_BITCOINS'])
 
+        if bitcoins_value > 0:
+            if bitcoins_value > current_cash:
+                flash("Client does not have enough money.", "danger")
+                return render_template('view_requests.html',t=t)
+            else:
+                db.execute(insert_query,req_status,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+        else:
+            if commission_type[0]['NO_OF_BITCOINS'] > client_data[0]['NO_OF_BITCOINS']:
+                flash("Client does not have enough bitcoins")
+                return render_template('view_requests.html',t=t)
+            else:
+                db.execute(insert_query,req_status,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+                
         commission_amount = 0
         new_balance = current_cash
-        if bitcoins_value > 0:
-            if commission_type[0]['commision_type'] == 'crypto':
-                if membership_type=='g':
-                    bitcoins = (bitcoins_value*0.99)/float(data)
+        if req_status > 0:
+            if bitcoins_value > 0:
+                if commission_type[0]['commision_type'] == 'crypto':
+                    if membership_type=='g':
+                        bitcoins = (bitcoins_value*0.99)/float(data)
+                    else:
+                        bitcoins = (bitcoins_value*0.98)/float(data)
                 else:
-                    bitcoins = (bitcoins_value*0.98)/float(data)
+                    if membership_type=='g':
+                        commission_amount = bitcoins_value*0.1
+                        bitcoins = (bitcoins_value)/float(data)
+                    else:
+                        commission_amount = bitcoins_value*0.2  
+                        bitcoins = (bitcoins_value)/float(data)
+                new_balance = current_cash - (bitcoins_value + commission_amount)
             else:
-                if membership_type=='g':
-                    commission_amount = bitcoins_value*0.1
-                    bitcoins = (bitcoins_value)/float(data)
-                else:
-                    commission_amount = bitcoins_value*0.2  
-                    bitcoins = (bitcoins_value)/float(data)
-            new_balance = current_cash - (bitcoins_value + commission_amount)
+                bitcoins = ((bitcoins_value)/float(data))
+            #print(bitcoins)
+            
+            db.execute("insert into BITCOIN_TRANSACTIONS (NUMBER_OF_BITCOINS,PRICE,COMMISSION_TYPE,COMMISSION_AMOUNT,CLIENT_ID,TRADER_ID,FINAL_STATUS) values (?,?,?,?,?,?,?)",bitcoins,data,commission_type[0]['commision_type'],commission_amount,accept_json["client_id"],accept_json["trader_id"],1)
+            db.execute("update client set liquid_cash = (?), no_of_bitcoins = no_of_bitcoins + (?) where client_id = (?)",new_balance,bitcoins,accept_json["client_id"])
+            t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", accept_json["trader_id"])
+            for i in range(0,len(t)):
+                t[i]['AMOUNT'] = data*t[i]['NO_OF_BITCOINS']
         else:
-            bitcoins = ((bitcoins_value)/float(data))
-        #print(bitcoins)
-        
-        db.execute("insert into BITCOIN_TRANSACTIONS (NUMBER_OF_BITCOINS,PRICE,COMMISSION_TYPE,COMMISSION_AMOUNT,CLIENT_ID,TRADER_ID,FINAL_STATUS) values (?,?,?,?,?,?,?)",bitcoins,data,commission_type[0]['commision_type'],commission_amount,accept_json["client_id"],accept_json["trader_id"],1)
-        db.execute("update client set liquid_cash = (?), no_of_bitcoins = no_of_bitcoins + (?) where client_id = (?)",new_balance,bitcoins,accept_json["client_id"])
-        t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", accept_json["trader_id"],)
+            db.execute("insert into BITCOIN_TRANSACTIONS (NUMBER_OF_BITCOINS,PRICE,COMMISSION_TYPE,COMMISSION_AMOUNT,CLIENT_ID,TRADER_ID,FINAL_STATUS) values (?,?,?,?,?,?,?)",commission_type[0]['NO_OF_BITCOINS'],data,commission_type[0]['commision_type'],commission_amount,accept_json["client_id"],accept_json["trader_id"],-1)
+            t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", accept_json["trader_id"])
+            for i in range(0,len(t)):
+                t[i]['AMOUNT'] = data*t[i]['NO_OF_BITCOINS']
         #print("\n\n ttt: ", t)
 
     return render_template("view_requests.html",t=t)
