@@ -7,6 +7,10 @@
 {% endblock %}
 
 {% block content %}
+<section class="hero is-success is-fullheight">
+    <div class="hero-body">
+      <div class="container">
+          <center>
 <form action="/custom_insights" onsubmit="return compare();" method="post">
     <div name = "aggregate">
         <div>
@@ -24,8 +28,12 @@
 
 </form>
 
+</center>
+
+<br><br>
+<p>Bitcoins sold</p>
+<br><br>
 <table width="100%">
-    <caption>Bitcoins sold</caption>
     <tr>
     <th>No. of users</th>
     <th>No. of bitcoins</th>
@@ -33,30 +41,35 @@
     </tr>
     {% for my_item in sell_items %}
     <tr>
-    <td>{{my_item.CLIENT_ID}}</td>
-    <td>{{my_item.AMOUNT}}</td>
-    <td>{{my_item.CLIENT_ID}}</td>
+    <td>{{my_item.total_no_of_txns}}</td>
+    <td>{{my_item.total_bitcoins}}</td>
+    <td>{{my_item.sell_txn_value}}</td>
     </tr>
     {% endfor %}
 </table>
 
 <br><br>
 
+<p>Bitcoins bought</p>
+<br><br>
 <table width="100%">
-    <caption>Bitcoins bought</caption>
     <tr>
-    <th>No. of users</th>
+    <th>No. of transaction</th>
     <th>No. of bitcoins</th>
     <th>Transaction value</th>
     </tr>
     {% for my_item in buy_items %}
     <tr>
-    <td>{{my_item.CLIENT_ID}}</td>
-    <td>{{my_item.AMOUNT}}</td>
-    <td>{{my_item.CLIENT_ID}}</td>
+    <td>{{my_item.total_no_of_txns}}</td>
+    <td>{{my_item.total_bitcoins}}</td>
+    <td>{{my_item.buy_txn_value}}</td>
     </tr>
     {% endfor %}
 </table>
+</div>
+</div>
+</section>
+
 {% endblock %}
 
 {% block script %}

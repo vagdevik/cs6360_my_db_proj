@@ -116,19 +116,23 @@ def logout():
 
 
 @app.route('/insights', methods=['GET', 'POST'])
-
+@login_required
 def insights():
     if request.method == 'POST':
         print(request.form)
         choice = request.form.get('insights') 
         if choice == 'day':
-            sql_str = "select count() from requests where cast(date_time as Date) = cast(date('now') as Date)"
-            db.execute()
-            print(choice)
+            buy_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(SUM(NUMBER_OF_BITCOINS),2) as total_bitcoins, ROUND(NUMBER_OF_BITCOINS*PRICE,2) as buy_txn_value FROM BITCOIN_TRANSACTIONS where cast(date_time as Date) = cast(date('now') as Date) and FINAL_STATUS=1 and NUMBER_OF_BITCOINS>0")
+            sell_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(ABS(SUM(NUMBER_OF_BITCOINS)),2) as total_bitcoins,ROUND(ABS(NUMBER_OF_BITCOINS*PRICE),2) as sell_txn_value FROM BITCOIN_TRANSACTIONS where cast(date_time as Date) = cast(date('now') as Date) and FINAL_STATUS=1 and NUMBER_OF_BITCOINS<0")
+            return render_template('manager/insights.html',buy_items = buy_records, sell_items = sell_records)
         elif choice == 'week':
-            print(choice)
+            buy_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(SUM(NUMBER_OF_BITCOINS),2) as total_bitcoins, ROUND(NUMBER_OF_BITCOINS*PRICE,2) as buy_txn_value FROM BITCOIN_TRANSACTIONS WHERE date_time BETWEEN datetime('now', '-6 days') AND datetime('now', 'localtime') and FINAL_STATUS=1 and NUMBER_OF_BITCOINS>0")
+            sell_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(ABS(SUM(NUMBER_OF_BITCOINS)),2) as total_bitcoins,ROUND(ABS(NUMBER_OF_BITCOINS*PRICE),2) as sell_txn_value FROM BITCOIN_TRANSACTIONS WHERE date_time BETWEEN datetime('now', '-6 days') AND datetime('now', 'localtime') and FINAL_STATUS=1 and NUMBER_OF_BITCOINS<0")
+            return render_template('manager/insights.html',buy_items = buy_records, sell_items = sell_records)
         elif choice == 'month':
-            print(choice)
+            buy_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(SUM(NUMBER_OF_BITCOINS),2) as total_bitcoins, ROUND(NUMBER_OF_BITCOINS*PRICE,2) as buy_txn_value FROM BITCOIN_TRANSACTIONS WHERE date_time BETWEEN datetime('now', 'start of month') AND datetime('now', 'localtime') and FINAL_STATUS=1 and NUMBER_OF_BITCOINS>0")
+            sell_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(ABS(SUM(NUMBER_OF_BITCOINS)),2) as total_bitcoins,ROUND(ABS(NUMBER_OF_BITCOINS*PRICE),2) as sell_txn_value FROM BITCOIN_TRANSACTIONS WHERE date_time BETWEEN datetime('now', 'start of month') AND datetime('now', 'localtime') and FINAL_STATUS=1 and NUMBER_OF_BITCOINS<0")
+            return render_template('manager/insights.html',buy_items = buy_records, sell_items = sell_records)
         elif choice == 'custom':
             return render_template('manager/custom_insights.html')
         
@@ -137,9 +141,14 @@ def insights():
 
 
 @app.route('/custom_insights',methods=['GET','POST'])
+@login_required
 def custom_ins():
     print(request.form)
-    return render_template('manager/custom_insights.html')
+    start_date = request.form.get('startDate')
+    end_date = request.form.get('endDate')
+    buy_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(SUM(NUMBER_OF_BITCOINS),2) as total_bitcoins, ROUND(NUMBER_OF_BITCOINS*PRICE,2) as buy_txn_value FROM BITCOIN_TRANSACTIONS WHERE DATE_TIME>=(?) and DATE_TIME<=(?) and FINAL_STATUS=1 and NUMBER_OF_BITCOINS>0", start_date, end_date)
+    sell_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(ABS(SUM(NUMBER_OF_BITCOINS)),2) as total_bitcoins,ROUND(ABS(NUMBER_OF_BITCOINS*PRICE),2) as sell_txn_value FROM BITCOIN_TRANSACTIONS WHERE DATE_TIME>=(?) and DATE_TIME<=(?) and FINAL_STATUS=1 and NUMBER_OF_BITCOINS<0", start_date, end_date)
+    return render_template('manager/custom_insights.html',buy_items = buy_records, sell_items = sell_records)
 
 @app.route('/admindash')
 @login_required
@@ -148,12 +157,11 @@ def admindash():
         return render_template('/')
     return render_template('/manager')
 
-# @app.route('/addadmin')
-# def addadmin():
-#     sqlstr = "INSERT INTO User (USER_ID, USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (1211, 'admin', 'bhaskar', 'raju', 0, 0, 'abc@abc.com', 'admin', '123');"
-#     db.execute(sqlstr)
-#     db.commit()
-#     return "1"
+@app.route('/addadmin')
+def addadmin():
+    sqlstr = "INSERT INTO User (USER_ID, USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (111211, 'admin', 'bhaskar', 'raju', 0, 0, 'abc@abc.com', 'admin', '123');"
+    db.execute(sqlstr)
+    return "1"
 
 
 @app.route('/profile')
@@ -225,7 +233,7 @@ def signup():
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return redirect(url_for('login'))
 
 ############
 
@@ -286,17 +294,25 @@ def trader_accept():
         accept = request.form.get("accept/decline")
         #print(accept)
         accept_json = json.loads(accept)
-        #print(accept_json)
-        insert_query = "UPDATE MONEY_PAYMENT_TRANSACTIONS SET FINAL_STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
-        db.execute(insert_query,1 if accept_json["action"] == "accept" else 0,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
-        
-        if(accept_json["action"] == "accept"):
-            q = db.execute("select net_amount from net_amount where  CLIENT_ID = (?) AND TRADER_ID =(?)",accept_json["client_id"],accept_json["trader_id"])
-            db.execute("UPDATE CLIENT set LIQUID_CASH = LIQUID_CASH - (?) where client_id =(?)",accept_json["amount"],accept_json["client_id"])
-            if(q):
-                t = db.execute("UPDATE NET_AMOUNT SET NET_AMOUNT = NET_AMOUNT + (?) where CLIENT_ID = (?) AND TRADER_ID =(?)",accept_json["amount"],accept_json["client_id"],accept_json["trader_id"])
-            else:
-                t = db.execute("insert into net_amount (net_amount, client_id, trader_id) values (?,?,?)",accept_json["amount"],accept_json["client_id"],accept_json["trader_id"])
+        print(accept_json)
+
+        cdata = db.execute("select LIQUID_CASH from CLIENT where CLIENT_ID = (?)",accept_json["client_id"])
+        print(cdata)
+        if float(cdata[0]['LIQUID_CASH']) > float(accept_json["amount"]):
+            insert_query = "UPDATE MONEY_PAYMENT_TRANSACTIONS SET FINAL_STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
+            db.execute(insert_query,1 if accept_json["action"] == "accept" else -1,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+            if(accept_json["action"] == "accept"):
+                q = db.execute("select net_amount from net_amount where  CLIENT_ID = (?) AND TRADER_ID =(?)",accept_json["client_id"],accept_json["trader_id"])
+                db.execute("UPDATE CLIENT set LIQUID_CASH = LIQUID_CASH - (?) where client_id =(?)",accept_json["amount"],accept_json["client_id"])
+                if(q):
+                    t = db.execute("UPDATE NET_AMOUNT SET NET_AMOUNT = NET_AMOUNT + (?) where CLIENT_ID = (?) AND TRADER_ID =(?)",accept_json["amount"],accept_json["client_id"],accept_json["trader_id"])
+                else:
+                    t = db.execute("insert into net_amount (net_amount, client_id, trader_id) values (?,?,?)",accept_json["amount"],accept_json["client_id"],accept_json["trader_id"])
+        else:
+            insert_query = "UPDATE MONEY_PAYMENT_TRANSACTIONS SET FINAL_STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
+            db.execute(insert_query,-1,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+            # db.execute("UPDATE CLIENT set LIQUID_CASH = LIQUID_CASH + (?) where client_id =(?)",accept_json["amount"],accept_json["client_id"])
+
     t = db.execute("SELECT * from MONEY_PAYMENT_TRANSACTIONS WHERE TRADER_ID=(?) and FINAL_STATUS=0", user)
     #print("\n\n ttt: ", t)
     return render_template("trader_accept.html",t=t)
@@ -325,9 +341,11 @@ def trader_accept():
 #     return render_template("trader_btc_accept.html",t=t)
 
 ##########
+
 @app.route('/view_requests', methods=['POST', 'GET'])
 @login_required
 def view_requests():
+    err = ''
     user = session["user_id"]
     t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", user)
 
@@ -348,22 +366,25 @@ def view_requests():
         accept = request.form.get("accept/decline")
         #print(accept)
         accept_json = json.loads(accept)
-        #print(accept_json)
+        print(accept_json)
         commission_type = db.execute("select commision_type,NO_OF_BITCOINS from requests  WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)",accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
         insert_query = "UPDATE REQUESTS SET STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
         
         #print(commission_type)
 
-        
+        sel_query = "SELECT NET_AMOUNT FROM NET_AMOUNT WHERE TRADER_ID = (?) AND CLIENT_ID = (?)"
         client_data = db.execute("SELECT LIQUID_CASH, NO_OF_BITCOINS, MEMBERSHIP FROM Client WHERE CLIENT_ID = (?)", accept_json["client_id"])
-        amount_data = db.execute("SELECT NET_AMOUNT FROM NET_AMOUNT WHERE TRADER_ID = (?) AND CLIENT_ID = (?)",accept_json["client_id"],accept_json["trader_id"])
-        
+        amount_data = db.execute(sel_query,accept_json['trader_id'],accept_json['client_id'])
+        print(amount_data)
         req_status = 1 if accept_json["action"] == "accept" else -1
 
-        if amount_data is not None:
+        if amount_data is None:
+            print("aaaaaaaaaaaaaaaaaaaaa")
             flash("Client does not have enough money.", "danger")
-            return render_template('view_requests.html',t=t)
+            err = 'You do not have enough money to accept this request'
 
+            return render_template('view_requests.html',t=t,)
+        print('bbbbbbbbbbbbbbbbb')
         current_cash = amount_data[0]['NET_AMOUNT']
 
         membership_type = client_data[0]['MEMBERSHIP']
@@ -371,14 +392,16 @@ def view_requests():
 
         if bitcoins_value > 0:
             if bitcoins_value > current_cash:
-                flash("Client does not have enough money.", "danger")
-                return render_template('view_requests.html',t=t)
+                flash("You do not have enough money to accept this request", "danger")
+                err = 'You do not have enough money to accept this request'
+                return render_template('view_requests.html',t=t,err=err)
             else:
                 db.execute(insert_query,req_status,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
         else:
             if commission_type[0]['NO_OF_BITCOINS'] > client_data[0]['NO_OF_BITCOINS']:
                 flash("Client does not have enough bitcoins")
-                return render_template('view_requests.html',t=t)
+                err = 'Client does not have enough bitcoins'
+                return render_template('view_requests.html',t=t,err=err)
             else:
                 db.execute(insert_query,req_status,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
                 
@@ -415,7 +438,97 @@ def view_requests():
                 t[i]['AMOUNT'] = data*t[i]['NO_OF_BITCOINS']
         #print("\n\n ttt: ", t)
 
-    return render_template("view_requests.html",t=t)
+    return render_template("view_requests.html",t=t, err = err)
+
+    
+# @app.route('/view_requests', methods=['POST', 'GET'])
+# @login_required
+# def view_requests():
+#     user = session["user_id"]
+#     t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", user)
+
+#     response = requests.get('https://api.coindesk.com/v1/bpi/currentprice.json')
+#     if response.status_code == 500 or response.status_code == 404:
+#         flash("Something went wrong, Please try again.", "danger")
+#         return render_template("buy.html")
+#     data = round(float(response.json()["bpi"]["USD"]["rate"].replace(",", "")))
+#     for i in range(0,len(t)):
+#         t[i]['AMOUNT'] = data*t[i]['NO_OF_BITCOINS']
+
+#     #print("\n\n ttt: ", t)
+#     if(request.method == 'POST'):
+        
+#         accept = request.form.get("accept/decline")
+#         #print(accept)
+#         accept_json = json.loads(accept)
+#         #print(accept_json)
+#         commission_type = db.execute("select commision_type,NO_OF_BITCOINS from requests  WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)",accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+#         insert_query = "UPDATE REQUESTS SET STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
+        
+#         #print(commission_type)
+
+        
+#         client_data = db.execute("SELECT LIQUID_CASH, NO_OF_BITCOINS, MEMBERSHIP FROM Client WHERE CLIENT_ID = (?)", accept_json["client_id"])
+#         amount_data = db.execute("SELECT NET_AMOUNT FROM NET_AMOUNT WHERE TRADER_ID = (?) AND CLIENT_ID = (?)",accept_json["client_id"],accept_json["trader_id"])
+        
+#         req_status = 1 if accept_json["action"] == "accept" else -1
+
+#         if amount_data is not None:
+#             flash("Client does not have enough money.", "danger")
+#             return render_template('view_requests.html',t=t)
+
+#         current_cash = amount_data[0]['NET_AMOUNT']
+
+#         membership_type = client_data[0]['MEMBERSHIP']
+#         bitcoins_value = data * float(commission_type[0]['NO_OF_BITCOINS'])
+
+#         if bitcoins_value > 0:
+#             if bitcoins_value > current_cash:
+#                 flash("Client does not have enough money.", "danger")
+#                 return render_template('view_requests.html',t=t)
+#             else:
+#                 db.execute(insert_query,req_status,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+#         else:
+#             if commission_type[0]['NO_OF_BITCOINS'] > client_data[0]['NO_OF_BITCOINS']:
+#                 flash("Client does not have enough bitcoins")
+#                 return render_template('view_requests.html',t=t)
+#             else:
+#                 db.execute(insert_query,req_status,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+                
+#         commission_amount = 0
+#         new_balance = current_cash
+#         if req_status > 0:
+#             if bitcoins_value > 0:
+#                 if commission_type[0]['commision_type'] == 'crypto':
+#                     if membership_type=='g':
+#                         bitcoins = (bitcoins_value*0.99)/float(data)
+#                     else:
+#                         bitcoins = (bitcoins_value*0.98)/float(data)
+#                 else:
+#                     if membership_type=='g':
+#                         commission_amount = bitcoins_value*0.1
+#                         bitcoins = (bitcoins_value)/float(data)
+#                     else:
+#                         commission_amount = bitcoins_value*0.2  
+#                         bitcoins = (bitcoins_value)/float(data)
+#                 new_balance = current_cash - (bitcoins_value + commission_amount)
+#             else:
+#                 bitcoins = ((bitcoins_value)/float(data))
+#             #print(bitcoins)
+            
+#             db.execute("insert into BITCOIN_TRANSACTIONS (NUMBER_OF_BITCOINS,PRICE,COMMISSION_TYPE,COMMISSION_AMOUNT,CLIENT_ID,TRADER_ID,FINAL_STATUS) values (?,?,?,?,?,?,?)",bitcoins,data,commission_type[0]['commision_type'],commission_amount,accept_json["client_id"],accept_json["trader_id"],1)
+#             db.execute("update client set liquid_cash = (?), no_of_bitcoins = no_of_bitcoins + (?) where client_id = (?)",new_balance,bitcoins,accept_json["client_id"])
+#             t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", accept_json["trader_id"])
+#             for i in range(0,len(t)):
+#                 t[i]['AMOUNT'] = data*t[i]['NO_OF_BITCOINS']
+#         else:
+#             db.execute("insert into BITCOIN_TRANSACTIONS (NUMBER_OF_BITCOINS,PRICE,COMMISSION_TYPE,COMMISSION_AMOUNT,CLIENT_ID,TRADER_ID,FINAL_STATUS) values (?,?,?,?,?,?,?)",commission_type[0]['NO_OF_BITCOINS'],data,commission_type[0]['commision_type'],commission_amount,accept_json["client_id"],accept_json["trader_id"],-1)
+#             t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", accept_json["trader_id"])
+#             for i in range(0,len(t)):
+#                 t[i]['AMOUNT'] = data*t[i]['NO_OF_BITCOINS']
+#         #print("\n\n ttt: ", t)
+
+#     return render_template("view_requests.html",t=t)
 
 @app.route('/client_info', methods=['POST', 'GET'])
 @login_required
@@ -669,7 +782,7 @@ def request_a_trader():
                 #print("client_current_bitcoins: ", client_current_bitcoins, "bitcoins: ", bitcoins, "client_current_bitcoins>=bitcoins: ",client_current_bitcoins<=bitcoins)
                 if client_current_bitcoins>=bitcoins:
                     # final status = -1 means declined by trader, 0: pending, 1: accepted by the trader
-                    db.execute("INSERT INTO REQUESTS (CLIENT_ID, TRADER_ID, NO_OF_BITCOINS, STATUS, COMMISION_TYPE) VALUES (?, ?, ?, ?)", client_id, trader_id[0]["USER_ID"], -1*bitcoins, 0, request.form.get("commision_type"))
+                    db.execute("INSERT INTO REQUESTS (CLIENT_ID, TRADER_ID, NO_OF_BITCOINS, STATUS, COMMISION_TYPE) VALUES (?, ?, ?, ?,?)", client_id, trader_id[0]["USER_ID"], -1*bitcoins, 0, request.form.get("commision_type"))
                     success_msg = "Request Sent the Trader, Let's wait for the approval!"
                     return render_template("requestTrader.html", success_msg=success_msg)
                 else:
