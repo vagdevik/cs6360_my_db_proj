@@ -37,6 +37,8 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 
+
+
 @app.before_request
 def before_request():
     g.user = None
@@ -108,6 +110,47 @@ def logout():
 
     # Redirect user to login form
     return redirect("/login")
+
+
+@app.route('/insights', methods=['GET', 'POST'])
+
+def insights():
+    if request.method == 'POST':
+        print(request.form)
+        choice = request.form.get('insights') 
+        if choice == 'day':
+            sql_str = "select count() from requests where cast(date_time as Date) = cast(date('now') as Date)"
+            db.execute()
+            print(choice)
+        elif choice == 'week':
+            print(choice)
+        elif choice == 'month':
+            print(choice)
+        elif choice == 'custom':
+            return render_template('manager/custom_insights.html')
+        
+     # return render_template('manager/insights.html',sell_items=None,buy_items=None)
+    return render_template('manager/insights.html')
+
+
+@app.route('/custom_insights',methods=['GET','POST'])
+def custom_ins():
+    print(request.form)
+    return render_template('manager/custom_insights.html')
+
+@app.route('/admindash')
+@login_required
+def admindash():
+    if request.method == 'POST':
+        return render_template('/')
+    return render_template('/manager')
+
+# @app.route('/addadmin')
+# def addadmin():
+#     sqlstr = "INSERT INTO User (USER_ID, USERNAME, FNAME, LNAME, PHONE, CELL, EMAIL, ROLE, HPWD) VALUES (1211, 'admin', 'bhaskar', 'raju', 0, 0, 'abc@abc.com', 'admin', '123');"
+#     db.execute(sqlstr)
+#     db.commit()
+#     return "1"
 
 
 @app.route('/profile')
@@ -551,6 +594,8 @@ def history():
     previous_moneyPayment_transactions = db.execute("SELECT * FROM MONEY_PAYMENT_TRANSACTIONS WHERE CLIENT_ID = (?)", user)
     print("history: previous_bitcoin_transactions:", previous_bitcoin_transactions, " previous_moneyPayment_transactions: ",previous_moneyPayment_transactions)
     return render_template("history.html", previous_bitcoin_transactions=previous_bitcoin_transactions, previous_moneyPayment_transactions=previous_moneyPayment_transactions)
+
+
 
 
 

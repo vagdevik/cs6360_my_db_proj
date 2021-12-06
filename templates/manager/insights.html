@@ -1,0 +1,59 @@
+-{% extends "layout.html" %}
+
+{% block heading %}
+<center>
+    <h1>View Insights</h1>
+</center>
+{% endblock %}
+
+{% block content %}
+
+    <form action="/insights" method="post">
+        <label for="insights">Choose a car:</label>
+
+        <select name="insights" id="cars">
+        <option value="day">Day</option>
+        <option value="month">Month</option>
+        <option value="week">Week</option>
+        <option value="custom">Custom</option>
+        </select>
+        <br><br>
+        <input type="submit" value="Submit">
+    </form>
+
+    <table width="100%">
+        <caption>Bitcoins sold</caption>
+        <tr>
+        <th>No. of users</th>
+        <th>No. of bitcoins</th>
+        <th>Transaction value</th>
+        </tr>
+        {% for my_item in sell_items %}
+        <tr>
+        <td>{{my_item.CLIENT_ID}}</td>
+        <td>{{my_item.AMOUNT}}</td>
+        <td>{{my_item.CLIENT_ID}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br><br>
+
+    <table width="100%">
+        <caption>Bitcoins bought</caption>
+        <tr>
+        <th>No. of users</th>
+        <th>No. of bitcoins</th>
+        <th>Transaction value</th>
+        </tr>
+        {% for my_item in buy_items %}
+        <tr>
+        <td>{{my_item.CLIENT_ID}}</td>
+        <td>{{my_item.AMOUNT}}</td>
+        <td>{{my_item.CLIENT_ID}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+
+{% endblock %}
