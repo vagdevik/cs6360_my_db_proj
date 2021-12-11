@@ -359,14 +359,15 @@ def view_requests():
 
     #print("\n\n ttt: ", t)
     if(request.method == 'POST'):
-        
-        
-
-
         accept = request.form.get("accept/decline")
         #print(accept)
         accept_json = json.loads(accept)
         print(accept_json)
+        if accept_json["action"] != "accept":
+            insert_query = "UPDATE REQUESTS SET STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
+            db.execute(insert_query,-1,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+            t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", user)
+            return render_template("view_requests.html",t=t, err = err)
         commission_type = db.execute("select commision_type,NO_OF_BITCOINS from requests  WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)",accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
         insert_query = "UPDATE REQUESTS SET STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
         
@@ -389,6 +390,30 @@ def view_requests():
         membership_type = client_data[0]['MEMBERSHIP']
         bitcoins_value = data * float(commission_type[0]['NO_OF_BITCOINS'])
 
+        commission_amount = 0
+        new_balance = current_cash
+        if bitcoins_value > 0:
+            if commission_type[0]['commision_type'] == 'BTC':
+                if membership_type=='g':
+                    bitcoins = (bitcoins_value*0.9)/float(data)
+                else:
+                    bitcoins = (bitcoins_value*0.8)/float(data)
+            else:
+                if membership_type=='g':
+                    commission_amount = bitcoins_value*0.1
+                    bitcoins = (bitcoins_value)/float(data)
+                else:
+                    commission_amount = bitcoins_value*0.2  
+                    bitcoins = (bitcoins_value)/float(data)
+            new_balance = current_cash - (bitcoins_value + commission_amount)
+        else:
+            sale_amount =abs(bitcoins_value)
+            commission_amount = sale_amount * 0.1 if membership_type == 'g' else 0.2
+            new_sale_balance = (sale_amount - commission_amount)
+            bitcoins = ((bitcoins_value)/float(data))
+            if req_status > 0:
+                db.execute("update client set liquid_cash = liquid_cash+(?) where client_id=(?)",new_sale_balance,accept_json["client_id"])
+
         if bitcoins_value > 0:
             if bitcoins_value > current_cash:
                 flash("You do not have enough money to accept this request", "danger")
@@ -404,29 +429,11 @@ def view_requests():
             else:
                 db.execute(insert_query,req_status,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
                 
-        commission_amount = 0
-        new_balance = current_cash
+        
         if req_status > 0:
-            if bitcoins_value > 0:
-                if commission_type[0]['commision_type'] == 'crypto':
-                    if membership_type=='g':
-                        bitcoins = (bitcoins_value*0.99)/float(data)
-                    else:
-                        bitcoins = (bitcoins_value*0.98)/float(data)
-                else:
-                    if membership_type=='g':
-                        commission_amount = bitcoins_value*0.1
-                        bitcoins = (bitcoins_value)/float(data)
-                    else:
-                        commission_amount = bitcoins_value*0.2  
-                        bitcoins = (bitcoins_value)/float(data)
-                new_balance = current_cash - (bitcoins_value + commission_amount)
-            else:
-                bitcoins = ((bitcoins_value)/float(data))
-            #print(bitcoins)
-            
             db.execute("insert into BITCOIN_TRANSACTIONS (NUMBER_OF_BITCOINS,PRICE,COMMISSION_TYPE,COMMISSION_AMOUNT,CLIENT_ID,TRADER_ID,FINAL_STATUS) values (?,?,?,?,?,?,?)",bitcoins,data,commission_type[0]['commision_type'],commission_amount,accept_json["client_id"],accept_json["trader_id"],1)
-            db.execute("update client set liquid_cash = (?), no_of_bitcoins = no_of_bitcoins + (?) where client_id = (?)",new_balance,bitcoins,accept_json["client_id"])
+            db.execute("update client set  no_of_bitcoins = no_of_bitcoins + (?) where client_id = (?)",bitcoins,accept_json["client_id"])
+            db.execute("update net_amount set net_amount = (?) where CLIENT_ID = (?) AND TRADER_ID =(?)",new_balance, accept_json["client_id"],accept_json["trader_id"])
             t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", accept_json["trader_id"])
             for i in range(0,len(t)):
                 t[i]['AMOUNT'] = data*t[i]['NO_OF_BITCOINS']
@@ -694,8 +701,10 @@ def sell():
     else:
         bitcoins = float(request.form.get("bitcoins"))
         user = session["user_id"]
-        current_bitcoins = float(db.execute("SELECT NO_OF_BITCOINS FROM Client WHERE CLIENT_ID = (?)", user)[0]["NO_OF_BITCOINS"])
+        client_data = float(db.execute("SELECT NO_OF_BITCOINS, membership FROM Client WHERE CLIENT_ID = (?)", user)[0]["NO_OF_BITCOINS"])
 
+        current_bitcoins = client_data['NO_OF_BITCOINS']
+        mem_type = client_data['membership']
         # user does not own stock
         if current_bitcoins==0:
             error = "You do not own any bitcoins to sell."
@@ -712,7 +721,9 @@ def sell():
             current_cash = db.execute("SELECT LIQUID_CASH FROM Client WHERE CLIENT_ID = (?)", user)
             current_cash = current_cash[0]['LIQUID_CASH']
             bitvalue = float(response.json()["bpi"]["USD"]["rate"].replace(",", ""))
-            new_balance = current_cash + ( bitvalue * float(bitcoins))
+            sale_amount = bitvalue * float(bitcoins)
+            commision_amount = sale_amount * 0.1 if mem_type == 'g' else 0.2
+            new_balance = current_cash + (sale_amount - commision_amount)
             bitcoins_left = current_bitcoins-bitcoins
 
             # update cash balance and number of bitcoins left
@@ -725,7 +736,7 @@ def sell():
             #     db.execute("UPDATE Client SET LIQUID_CASH = (?) WHERE CLIENT_ID = (?)", new_balance, user)
 
             # update history
-            db.execute("INSERT INTO BITCOIN_TRANSACTIONS(CLIENT_ID, NUMBER_OF_BITCOINS, PRICE, COMMISSION_TYPE, COMMISSION_AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?, ?, ?)", user, "-"+str(bitcoins), bitvalue, "-", "12", 1)
+            db.execute("INSERT INTO BITCOIN_TRANSACTIONS(CLIENT_ID, NUMBER_OF_BITCOINS, PRICE, COMMISSION_TYPE, COMMISSION_AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?, ?, ?)", user, "-"+str(bitcoins), bitvalue, commision_amount, "12", 1)
 
             # db.execute("INSERT INTO BITCOIN_TRANSACTIONS(user_id, stock, shares, price) VALUES (?, ?, ?, ?)", user, symbol, "-" + shares, price.json()["latestPrice"])
             flash("Sold!", "primary")
