@@ -12,7 +12,7 @@
         <div class="form-group">
             <table width="100%">
                 <tr>
-                <th>Client Id</th>
+                <th>Client username</th>
                 <th>Number of Bitcoins</th>
                 <th>Amount</th>
 
@@ -21,7 +21,7 @@
                 {% for my_item in t %}
                 {% if my_item.STATUS == '0' %}
                 <tr>
-                <td>{{my_item.CLIENT_ID}}</td>
+                <td>{{my_item.USERNAME}}</td>
                 <td>{{my_item.NO_OF_BITCOINS}}</td>
                 <td>{{my_item.AMOUNT}}</td>
 

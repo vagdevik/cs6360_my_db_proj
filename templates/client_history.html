@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+
+{% block heading %}
+<center>
+    <h1>Client History</h1>
+</center>
+{% endblock %}
+
+{% block content %}
+
+    <form action="/client_history" method="post">
+        <div class="form-group">
+            <input class="form-control" name="Client_Name" placeholder="Client Username" type="text">
+
+            <button class="btn btn-primary" type="submit" >Search</button>
+        </div>
+        <div class="form-group">
+            <table width="100%">
+                <tr>
+                <th>Client Username</th>
+                <th>Number of Bitcoins</th>
+                <th>Price per Bitcoin</th>
+                <th>Commission Type</th>
+                <th>Commission Amount</th>
+                <th>Date time</th>
+                <th>Final Status</th>
+                </tr>
+                {% for my_item in t %}
+
+                <tr>
+                <td>{{my_item.USERNAME}}</td>
+                <td>{{my_item.NUMBER_OF_BITCOINS}}</td>
+                <td>{{my_item.PRICE}}</td>
+                <td>{{my_item.COMMISSION_TYPE}}</td>
+                <td>{{my_item.COMMISSION_AMOUNT}}</td>
+                <td>{{my_item.DATE_TIME}}</td>
+                    {% if my_item.FINAL_STATUS == '1' %}
+                <td>Accepted</td>
+                    {% else %}
+                    <td> Rejected</td>
+                {% endif %}
+                </tr>
+
+                {% endfor %}
+            </table>
+
+        </div>
+
+    </form>
+
+
+{% endblock %}
