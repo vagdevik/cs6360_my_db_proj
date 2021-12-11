@@ -13,13 +13,15 @@
         <div class="form-group">
             <table width="100%">
                 <tr>
+
+                <th>DateTime</th>
                 <th>Client Id</th>
                 <th>Amount</th>
-
                 <th>Accept/Decline</th>
                 </tr>
                 {% for my_item in t %}
                 <tr>
+                <td>{{convert_utc(my_item.DATE_TIME)}}</td>
                 <td>{{my_item.USERNAME}}</td>
                 <td>{{my_item.AMOUNT}}</td>
                     <td><input type="radio" id="accept" name="accept/decline" value='{"client_id":"{{my_item.CLIENT_ID}}","trader_id":"{{my_item.TRADER_ID}}", "amount":"{{my_item.AMOUNT}}","date_time": "{{my_item.DATE_TIME}}","action" : "accept"}'>Accept  </input>

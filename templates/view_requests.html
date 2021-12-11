@@ -12,6 +12,7 @@
         <div class="form-group">
             <table width="100%">
                 <tr>
+                <th>DateTime</th>
                 <th>Client username</th>
                 <th>Number of Bitcoins</th>
                 <th>Amount</th>
@@ -21,6 +22,7 @@
                 {% for my_item in t %}
                 {% if my_item.STATUS == '0' %}
                 <tr>
+                <td>{{convert_utc(my_item.DATE_TIME)}}</td>
                 <td>{{my_item.USERNAME}}</td>
                 <td>{{my_item.NO_OF_BITCOINS}}</td>
                 <td>{{my_item.AMOUNT}}</td>
