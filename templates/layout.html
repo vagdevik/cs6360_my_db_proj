@@ -40,6 +40,7 @@
                     <li><a href="{{url_for('view_requests')}}">View Bitcoin Requests</a></li>
                     <li><a href="{{url_for('trader_accept')}}">View Money Requests</a></li>
                     <li><a href="{{url_for('client_info')}}">View Client Info</a></li>
+                    <li><a href="{{url_for('client_history')}}">View Client History</a></li>
                   {% elif  g.role =='client' %}
                     <li><a href="{{ url_for('profile') }}">Portfolio</a></li>
                     <li><a href="{{ url_for('bitinfo') }}">BitInfo</a></li>
