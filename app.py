@@ -971,7 +971,7 @@ def pay_to_trader():
 
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=update_mem, trigger="interval", seconds=60)
+scheduler.add_job(func=update_mem, trigger="interval",hours=24)
 scheduler.start()
 
 # Shut down the scheduler when exiting the app
