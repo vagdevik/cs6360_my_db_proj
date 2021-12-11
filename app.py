@@ -406,9 +406,10 @@ def view_requests():
                 
         commission_amount = 0
         new_balance = current_cash
+        print('sd ',commission_type[0]['commision_type'])
         if req_status > 0:
             if bitcoins_value > 0:
-                if commission_type[0]['commision_type'] == 'crypto':
+                if commission_type[0]['commision_type'] == 'BTC':
                     if membership_type=='g':
                         bitcoins = (bitcoins_value*0.99)/float(data)
                     else:
