@@ -33,7 +33,7 @@
                 <td>{{my_item.PRICE}}</td>
                 <td>{{my_item.COMMISSION_TYPE}}</td>
                 <td>{{my_item.COMMISSION_AMOUNT}}</td>
-                <td>{{my_item.DATE_TIME}}</td>
+                <td>{{convert_utc(my_item.DATE_TIME)}}</td>
                     {% if my_item.FINAL_STATUS == '1' %}
                 <td>Accepted</td>
                     {% else %}

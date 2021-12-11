@@ -29,7 +29,7 @@
       <tbody>
           {% for i in previous_bitcoin_transactions %}
         <tr>
-          <td>{{ i["DATE_TIME"].upper() }}</th>
+          <td> {{convert_utc(i["DATE_TIME"])}}  </th>
           <td>{{ i["NUMBER_OF_BITCOINS"] }}</td>
           <td>${{  "%.2f"|format(i["PRICE"]) }}</td>
            {% if i["TRADER_ID"] != None %}
@@ -65,7 +65,7 @@
       <tbody>
           {% for i in previous_moneyPayment_transactions %}
         <tr>
-          <td>{{ i["DATE_TIME"].upper() }}</th>
+          <td>{{ convert_utc(i["DATE_TIME"].upper()) }}</th>
           <td>{{usernames[i["TRADER_ID"]]}}</td>
           <td>${{"%.2f"|format(i["AMOUNT"]) }}</td>
           <td>{{ 'accept' if i["FINAL_STATUS"] == '1' else 'pending' if i["FINAL_STATUS"] == '0' else 'decline' }}</td>

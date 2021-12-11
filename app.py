@@ -11,6 +11,7 @@ from functools import wraps
 from flask import flash
 from flask import g, redirect, url_for, session
 from flask import Flask, request, render_template
+import time
 
 # Define a flask app
 app = Flask(__name__)
@@ -401,12 +402,14 @@ def view_requests():
         # print(accept)
         accept_json = json.loads(accept)
         print(accept_json)
+        commission_type = db.execute("select commision_type,NO_OF_BITCOINS from requests  WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)",accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
         if accept_json["action"] != "accept":
             insert_query = "UPDATE REQUESTS SET STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
             db.execute(insert_query,-1,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
+            db.execute("insert into BITCOIN_TRANSACTIONS (NUMBER_OF_BITCOINS,PRICE,COMMISSION_TYPE,COMMISSION_AMOUNT,CLIENT_ID,TRADER_ID,FINAL_STATUS) values (?,?,?,?,?,?,?)",
+                commission_type[0]['NO_OF_BITCOINS'], data, commission_type[0]['commision_type'], 0,accept_json["client_id"], accept_json["trader_id"], -1)
             t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", user)
             return render_template("view_requests.html",t=t, err = err,error='')
-        commission_type = db.execute("select commision_type,NO_OF_BITCOINS from requests  WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)",accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
         insert_query = "UPDATE REQUESTS SET STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
 
         # print(commission_type)
@@ -902,6 +905,14 @@ def request_a_trader():
         return render_template("requestTrader.html", error="Trader not found.")
 
 
+def convert_utc(utc_datetime):
+    print(utc_datetime)
+    now_timestamp = time.time()
+    offset = datetime.fromtimestamp(now_timestamp) - datetime.utcfromtimestamp(now_timestamp)
+    return datetime.strptime(utc_datetime,"%Y-%m-%d %H:%M:%S") + offset
+
+
+
 @app.route('/payTrader', methods=["GET", "POST"])
 @login_required
 def pay_to_trader():
@@ -943,4 +954,5 @@ def pay_to_trader():
 
 
 if __name__ == "__main__":
+    app.jinja_env.globals.update(convert_utc=convert_utc)
     app.run(debug=True, port="4114")
