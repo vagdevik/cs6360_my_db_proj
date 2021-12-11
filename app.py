@@ -443,7 +443,7 @@ def view_requests():
             new_balance = current_cash - (bitcoins_value + commission_amount)
         else:
             sale_amount =abs(bitcoins_value)
-            commission_amount = sale_amount * 0.1 if membership_type == 'g' else 0.2
+            commission_amount = sale_amount * (0.1 if membership_type == 'g' else 0.2)
             new_sale_balance = (sale_amount - commission_amount)
             bitcoins = ((bitcoins_value)/float(data))
             if req_status > 0:
@@ -787,10 +787,10 @@ def sell():
     else:
         bitcoins = float(request.form.get("bitcoins"))
         user = session["user_id"]
-        client_data = float(db.execute("SELECT NO_OF_BITCOINS, membership FROM Client WHERE CLIENT_ID = (?)", user)[0]["NO_OF_BITCOINS"])
+        client_data = db.execute("SELECT NO_OF_BITCOINS, MEMBERSHIP FROM Client WHERE CLIENT_ID = (?)", user)
 
-        current_bitcoins = client_data['NO_OF_BITCOINS']
-        mem_type = client_data['membership']
+        current_bitcoins = float(client_data[0]['NO_OF_BITCOINS'])
+        mem_type = client_data[0]['MEMBERSHIP']
         # user does not own stock
         if current_bitcoins == 0:
             error = "You do not own any bitcoins to sell."
@@ -808,7 +808,7 @@ def sell():
             current_cash = current_cash[0]['LIQUID_CASH']
             bitvalue = float(response.json()["bpi"]["USD"]["rate"].replace(",", ""))
             sale_amount = bitvalue * float(bitcoins)
-            commision_amount = sale_amount * 0.1 if mem_type == 'g' else 0.2
+            commision_amount = sale_amount * (0.1 if mem_type == 'g' else 0.2)
             new_balance = current_cash + (sale_amount - commision_amount)
             bitcoins_left = current_bitcoins-bitcoins
 
@@ -823,7 +823,7 @@ def sell():
             #     db.execute("UPDATE Client SET LIQUID_CASH = (?) WHERE CLIENT_ID = (?)", new_balance, user)
 
             # update history
-            db.execute("INSERT INTO BITCOIN_TRANSACTIONS(CLIENT_ID, NUMBER_OF_BITCOINS, PRICE, COMMISSION_TYPE, COMMISSION_AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?, ?, ?)", user, "-"+str(bitcoins), bitvalue, commision_amount, "12", 1)
+            db.execute("INSERT INTO BITCOIN_TRANSACTIONS(CLIENT_ID, NUMBER_OF_BITCOINS, PRICE, COMMISSION_TYPE, COMMISSION_AMOUNT, FINAL_STATUS) VALUES (?, ?, ?, ?, ?, ?)", user, "-"+str(bitcoins), bitvalue, '-',commision_amount, 1)
 
             # db.execute("INSERT INTO BITCOIN_TRANSACTIONS(user_id, stock, shares, price) VALUES (?, ?, ?, ?)", user, symbol, "-" + shares, price.json()["latestPrice"])
             flash("Sold!", "primary")
