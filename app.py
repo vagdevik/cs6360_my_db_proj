@@ -342,13 +342,16 @@ def trader_accept():
                     t = db.execute("insert into net_amount (net_amount, client_id, trader_id) values (?,?,?)",
                                    accept_json["amount"], accept_json["client_id"], accept_json["trader_id"])
         else:
+           
             insert_query = "UPDATE MONEY_PAYMENT_TRANSACTIONS SET FINAL_STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
             db.execute(insert_query, -1, accept_json["client_id"], accept_json["trader_id"], accept_json["date_time"])
+            t = db.execute("SELECT * from MONEY_PAYMENT_TRANSACTIONS, user u WHERE TRADER_ID=(?) and u.user_id = ClIENT_ID and FINAL_STATUS=0", user)
+            return render_template("trader_accept.html", t=t,error='Not enough cash with client.')
             # db.execute("UPDATE CLIENT set LIQUID_CASH = LIQUID_CASH + (?) where client_id =(?)",accept_json["amount"],accept_json["client_id"])
 
     t = db.execute("SELECT * from MONEY_PAYMENT_TRANSACTIONS, user u WHERE TRADER_ID=(?) and u.user_id = ClIENT_ID and FINAL_STATUS=0", user)
     print("\n\n ttt: ", t)
-    return render_template("trader_accept.html", t=t)
+    return render_template("trader_accept.html", t=t,error='')
 
 
 # @app.route('/trader_btc_accept', methods=['POST', 'GET'])
@@ -379,6 +382,7 @@ def trader_accept():
 @login_required
 def view_requests():
     err = ''
+    error=''
     user = session["user_id"]
     t = db.execute("SELECT amount, DATE_TIME , NO_OF_BITCOINS, TRADER_ID , CLIENT_ID , status, commision_type, u.USERNAME, u.FNAME , u.LNAME from REQUESTS, 'User' u WHERE TRADER_ID=(?) and CLIENT_ID = u.USER_ID and status = 0;", user)
     print("..................")
@@ -401,7 +405,7 @@ def view_requests():
             insert_query = "UPDATE REQUESTS SET STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
             db.execute(insert_query,-1,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
             t = db.execute("SELECT * from REQUESTS WHERE TRADER_ID=(?) and status = 0", user)
-            return render_template("view_requests.html",t=t, err = err)
+            return render_template("view_requests.html",t=t, err = err,error='')
         commission_type = db.execute("select commision_type,NO_OF_BITCOINS from requests  WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)",accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
         insert_query = "UPDATE REQUESTS SET STATUS = (?) WHERE CLIENT_ID = (?) AND TRADER_ID =(?) AND DATE_TIME = (?)"
 
@@ -415,10 +419,10 @@ def view_requests():
         req_status = 1 if accept_json["action"] == "accept" else -1
 
         if not amount_data or amount_data is None:
-            flash("Client does not have enough money.", "danger")
+            flash()
             err = 'You do not have enough money to accept this request'
 
-            return render_template('view_requests.html', t=t, )
+            return render_template('view_requests.html', t=t, error="Client does not have enough money.")
         print('bbbbbbbbbbbbbbbbb')
         current_cash = amount_data[0]['NET_AMOUNT']
 
@@ -453,7 +457,7 @@ def view_requests():
             if bitcoins_value > current_cash:
                 flash("You do not have enough money to accept this request", "danger")
                 err = 'You do not have enough money to accept this request'
-                return render_template('view_requests.html', t=t, err=err)
+                return render_template('view_requests.html', t=t, err=err, error="Client does not have enough money to accept this request.")
             else:
                 db.execute(insert_query, req_status, accept_json["client_id"], accept_json["trader_id"],
                            accept_json["date_time"])
@@ -461,7 +465,7 @@ def view_requests():
             if commission_type[0]['NO_OF_BITCOINS'] > client_data[0]['NO_OF_BITCOINS']:
                 flash("Client does not have enough bitcoins")
                 err = 'Client does not have enough bitcoins'
-                return render_template('view_requests.html', t=t, err=err)
+                return render_template('view_requests.html', t=t, err=err, error="Client does not have enough bitcoins.")
             else:
                 db.execute(insert_query,req_status,accept_json["client_id"],accept_json["trader_id"], accept_json["date_time"])
                 
@@ -483,7 +487,7 @@ def view_requests():
                 t[i]['AMOUNT'] = data * t[i]['NO_OF_BITCOINS']
         # print("\n\n ttt: ", t)
 
-    return render_template("view_requests.html", t=t, err=err)
+    return render_template("view_requests.html", t=t, err=err,error='')
 
 
 # @app.route('/view_requests', methods=['POST', 'GET'])
