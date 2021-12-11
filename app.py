@@ -45,11 +45,11 @@ def before_request():
     g.user = None
 
     if 'user_id' in session:
-        print("\n session['user_id]:", session['user_id'])
+        # print("\n session['user_id]:", session['user_id'])
 
         y = db.execute("SELECT * from User")
         role = [w for w in y if w['USER_ID']==session['user_id']]
-        print("role: ", role)
+        # print("role: ", role)
         # user = [z for z in x if z['CLIENT_ID'] == session['user_id']]
         
         print("\n role: ", role)
@@ -118,26 +118,30 @@ def logout():
 @app.route('/insights', methods=['GET', 'POST'])
 @login_required
 def insights():
+    timeframe = ''
     if request.method == 'POST':
         print(request.form)
         choice = request.form.get('insights') 
         if choice == 'day':
+            timeframe = 'Today'
             buy_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(SUM(NUMBER_OF_BITCOINS),2) as total_bitcoins, ROUND(NUMBER_OF_BITCOINS*PRICE,2) as buy_txn_value FROM BITCOIN_TRANSACTIONS where cast(date_time as Date) = cast(date('now') as Date) and FINAL_STATUS=1 and NUMBER_OF_BITCOINS>0")
             sell_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(ABS(SUM(NUMBER_OF_BITCOINS)),2) as total_bitcoins,ROUND(ABS(NUMBER_OF_BITCOINS*PRICE),2) as sell_txn_value FROM BITCOIN_TRANSACTIONS where cast(date_time as Date) = cast(date('now') as Date) and FINAL_STATUS=1 and NUMBER_OF_BITCOINS<0")
-            return render_template('manager/insights.html',buy_items = buy_records, sell_items = sell_records)
+            return render_template('manager/insights.html',buy_items = buy_records, sell_items = sell_records, timeframe=timeframe)
         elif choice == 'week':
+            timeframe = "This Week"
             buy_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(SUM(NUMBER_OF_BITCOINS),2) as total_bitcoins, ROUND(NUMBER_OF_BITCOINS*PRICE,2) as buy_txn_value FROM BITCOIN_TRANSACTIONS WHERE date_time BETWEEN datetime('now', '-6 days') AND datetime('now', 'localtime') and FINAL_STATUS=1 and NUMBER_OF_BITCOINS>0")
             sell_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(ABS(SUM(NUMBER_OF_BITCOINS)),2) as total_bitcoins,ROUND(ABS(NUMBER_OF_BITCOINS*PRICE),2) as sell_txn_value FROM BITCOIN_TRANSACTIONS WHERE date_time BETWEEN datetime('now', '-6 days') AND datetime('now', 'localtime') and FINAL_STATUS=1 and NUMBER_OF_BITCOINS<0")
-            return render_template('manager/insights.html',buy_items = buy_records, sell_items = sell_records)
+            return render_template('manager/insights.html',buy_items = buy_records, sell_items = sell_records, timeframe=timeframe)
         elif choice == 'month':
+            timeframe = 'This Month'
             buy_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(SUM(NUMBER_OF_BITCOINS),2) as total_bitcoins, ROUND(NUMBER_OF_BITCOINS*PRICE,2) as buy_txn_value FROM BITCOIN_TRANSACTIONS WHERE date_time BETWEEN datetime('now', 'start of month') AND datetime('now', 'localtime') and FINAL_STATUS=1 and NUMBER_OF_BITCOINS>0")
             sell_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(ABS(SUM(NUMBER_OF_BITCOINS)),2) as total_bitcoins,ROUND(ABS(NUMBER_OF_BITCOINS*PRICE),2) as sell_txn_value FROM BITCOIN_TRANSACTIONS WHERE date_time BETWEEN datetime('now', 'start of month') AND datetime('now', 'localtime') and FINAL_STATUS=1 and NUMBER_OF_BITCOINS<0")
-            return render_template('manager/insights.html',buy_items = buy_records, sell_items = sell_records)
+            return render_template('manager/insights.html',buy_items = buy_records, sell_items = sell_records, timeframe=timeframe)
         elif choice == 'custom':
             return render_template('manager/custom_insights.html')
         
      # return render_template('manager/insights.html',sell_items=None,buy_items=None)
-    return render_template('manager/insights.html')
+    return render_template('manager/insights.html', timeframe=timeframe)
 
 
 @app.route('/custom_insights',methods=['GET','POST'])
@@ -148,7 +152,7 @@ def custom_ins():
     end_date = request.form.get('endDate')
     buy_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(SUM(NUMBER_OF_BITCOINS),2) as total_bitcoins, ROUND(NUMBER_OF_BITCOINS*PRICE,2) as buy_txn_value FROM BITCOIN_TRANSACTIONS WHERE DATE_TIME>=(?) and DATE_TIME<=(?) and FINAL_STATUS=1 and NUMBER_OF_BITCOINS>0", start_date, end_date)
     sell_records = db.execute("SELECT COUNT(*) as total_no_of_txns,ROUND(ABS(SUM(NUMBER_OF_BITCOINS)),2) as total_bitcoins,ROUND(ABS(NUMBER_OF_BITCOINS*PRICE),2) as sell_txn_value FROM BITCOIN_TRANSACTIONS WHERE DATE_TIME>=(?) and DATE_TIME<=(?) and FINAL_STATUS=1 and NUMBER_OF_BITCOINS<0", start_date, end_date)
-    return render_template('manager/custom_insights.html',buy_items = buy_records, sell_items = sell_records)
+    return render_template('manager/custom_insights.html',buy_items = buy_records, sell_items = sell_records, start_date=start_date, end_date=end_date)
 
 @app.route('/admindash')
 @login_required
@@ -772,7 +776,9 @@ def request_a_trader():
         trader_id = db.execute("SELECT USER_ID from User where USERNAME = (?)", trader_username)
         #print("---------------------------------------------")
         #print(trader_id)
-        trader = db.execute("SELECT TRADER_ID from Trader where TRADER_ID = (?)", trader_id[0]["USER_ID"])
+        trader = ''
+        if trader_id:
+            trader = db.execute("SELECT TRADER_ID from Trader where TRADER_ID = (?)", trader_id[0]["USER_ID"])
         #print("Traders fectched: ",trader)
         #print("TTTTTT")
         if trader:
