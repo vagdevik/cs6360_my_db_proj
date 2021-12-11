@@ -44,11 +44,13 @@ def before_request():
     g.user = None
 
     if 'user_id' in session:
-        print("\n session['user_id]:", session['user_id'])
+        # print("\n session['user_id]:", session['user_id'])
 
         y = db.execute("SELECT * from User")
+
         role = [w for w in y if w['USER_ID'] == session['user_id']]
         print("role: ", role)
+
         # user = [z for z in x if z['CLIENT_ID'] == session['user_id']]
 
         print("\n role: ", role)
@@ -121,6 +123,7 @@ def logout():
 @app.route('/insights', methods=['GET', 'POST'])
 @login_required
 def insights():
+    timeframe = ''
     if request.method == 'POST':
         print(request.form)
         choice = request.form.get('insights')
@@ -866,6 +869,7 @@ def request_a_trader():
         trader = db.execute("SELECT TRADER_ID from Trader where TRADER_ID = (?)", trader_id[0]["USER_ID"])
         # print("Traders fectched: ",trader)
         # print("TTTTTT")
+
         if trader:
             if action == 'sell':
                 client_current_bitcoins = \
