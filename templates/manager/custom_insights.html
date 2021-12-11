@@ -28,17 +28,26 @@
 
 </form>
 
-</center>
+{% if start_date and end_date %}
+<br><br>
+<h5><font color="green">Insights : {{start_date}} to {{end_date}}</font></h5>
+
+{% endif %}
+
+{% if sell_items %}
 
 <br><br>
-<p>Bitcoins sold</p>
+<h3>Bitcoins sold</h3>
 <br><br>
-<table width="100%">
+    <table class="table">
+    <thead>
     <tr>
     <th>No. of users</th>
     <th>No. of bitcoins</th>
     <th>Transaction value</th>
     </tr>
+    </thead>
+    <tbody>
     {% for my_item in sell_items %}
     <tr>
     <td>{{my_item.total_no_of_txns}}</td>
@@ -46,18 +55,26 @@
     <td>{{my_item.sell_txn_value}}</td>
     </tr>
     {% endfor %}
+    </tbody>
 </table>
 
 <br><br>
 
-<p>Bitcoins bought</p>
+{% endif %}
+
+{% if buy_items %}
+
+<h3>Bitcoins bought</h3>
 <br><br>
-<table width="100%">
+<table class="table">
+    <thead>
     <tr>
     <th>No. of transaction</th>
     <th>No. of bitcoins</th>
     <th>Transaction value</th>
     </tr>
+</thead>
+<tbody>
     {% for my_item in buy_items %}
     <tr>
     <td>{{my_item.total_no_of_txns}}</td>
@@ -65,7 +82,11 @@
     <td>{{my_item.buy_txn_value}}</td>
     </tr>
     {% endfor %}
+    </tbody>
 </table>
+
+{% endif %}
+</center>
 </div>
 </div>
 </section>

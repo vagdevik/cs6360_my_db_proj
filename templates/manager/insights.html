@@ -12,7 +12,7 @@
       <div class="container">
           <center>
     <form action="/insights" method="post">
-        <label for="insights">Choose a car:</label>
+        <label for="insights">Select the time frame of transactions:</label>
 
         <select name="insights" id="cars">
         <option value="day">Day</option>
@@ -24,15 +24,21 @@
         <input type="submit" value="Submit">
     </form>
 
-</center>
+    <br><br><br><br>
 
-    <p>Bitcoins sold</p>
-    <table width="100%">
+
+
+    <h3>Bitcoins sold {{timeframe}} </h3>
+    <!-- <table width="100%"> -->
+    <table class="table">
+    <thead>
         <tr>
-        <th>No. of transactions</th>
-        <th>No. of bitcoins</th>
-        <th>Transaction value</th>
+        <th  scope="col">No. of transactions</th>
+        <th scope="col">No. of bitcoins</th>
+        <th scope="col">Transaction value</th>
         </tr>
+    </thead>
+    <tbody>
         {% for my_item in sell_items %}
         <tr>
         <td>{{my_item.total_no_of_txns}}</td>
@@ -40,12 +46,14 @@
         <td>{{my_item.sell_txn_value}}</td>
         </tr>
         {% endfor %}
+    </tbody>
     </table>
     
-    <br><br>
+    <br><br><br><br>
     
-    <p>Bitcoins bought</p>
-    <table width="100%">
+    <h3>Bitcoins bought {{timeframe}} </h3>
+    <!-- <table width="100%"> -->
+        <table class="table">
         <tr>
         <th>No. of transaction</th>
         <th>No. of bitcoins</th>
@@ -59,6 +67,7 @@
         </tr>
         {% endfor %}
     </table>
+    </center>
 
 </div>
 </div>
