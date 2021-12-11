@@ -19,7 +19,7 @@
                 </tr>
                 {% for my_item in t %}
                 <tr>
-                <td>{{my_item.CLIENT_ID}}</td>
+                <td>{{my_item.USERNAME}}</td>
                 <td>{{my_item.AMOUNT}}</td>
                     <td><input type="radio" id="accept" name="accept/decline" value='{"client_id":"{{my_item.CLIENT_ID}}","trader_id":"{{my_item.TRADER_ID}}", "amount":"{{my_item.AMOUNT}}","date_time": "{{my_item.DATE_TIME}}","action" : "accept"}'>Accept  </input>
                     <input type="radio" id="decline" name="accept/decline" value='{"client_id":"{{my_item.CLIENT_ID}}","trader_id":"{{my_item.TRADER_ID}}","amount":"{{my_item.AMOUNT}}", "date_time": "{{my_item.DATE_TIME}}","action" : "decline"}'>Decline    </input>
