@@ -12,6 +12,12 @@ from flask import flash
 from flask import g, redirect, url_for, session
 from flask import Flask, request, render_template
 import time
+import time
+import atexit
+from apscheduler.schedulers.background import BackgroundScheduler
+
+
+
 
 # Define a flask app
 app = Flask(__name__)
@@ -913,6 +919,16 @@ def convert_utc(utc_datetime):
 
 
 
+def update_mem():
+    sql_str_g = "update client set membership = 'g' where client_id in (select client_id from BITCOIN_TRANSACTIONS WHERE DATE_TIME >= date('now','-1 months') AND DATE_TIME < date('now') group by client_id having sum(abs(NUMBER_OF_BITCOINS)*PRICE) > 100000)"
+    sql_str_s = "update client set membership = 's' where client_id not in (select client_id from BITCOIN_TRANSACTIONS WHERE DATE_TIME >= date('now','-1 months') AND DATE_TIME < date('now') group by client_id having sum(abs(NUMBER_OF_BITCOINS)*PRICE) > 100000)"
+    db.execute(sql_str_g)
+    db.execute(sql_str_s)
+
+
+
+
+
 @app.route('/payTrader', methods=["GET", "POST"])
 @login_required
 def pay_to_trader():
@@ -952,6 +968,14 @@ def pay_to_trader():
             error = "There exists no trader with the given username."
             return render_template("payTrader.html", error=error)
 
+
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=update_mem, trigger="interval", seconds=60)
+scheduler.start()
+
+# Shut down the scheduler when exiting the app
+atexit.register(lambda: scheduler.shutdown())
 
 if __name__ == "__main__":
     app.jinja_env.globals.update(convert_utc=convert_utc)
