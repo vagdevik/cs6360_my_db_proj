@@ -920,8 +920,8 @@ def convert_utc(utc_datetime):
 
 
 def update_mem():
-    sql_str_g = "update client set membership = 'g' where client_id in (select client_id from BITCOIN_TRANSACTIONS WHERE DATE_TIME >= date('now','-1 months') AND DATE_TIME < date('now') group by client_id having sum(abs(NUMBER_OF_BITCOINS)*PRICE) > 100000)"
-    sql_str_s = "update client set membership = 's' where client_id not in (select client_id from BITCOIN_TRANSACTIONS WHERE DATE_TIME >= date('now','-1 months') AND DATE_TIME < date('now') group by client_id having sum(abs(NUMBER_OF_BITCOINS)*PRICE) > 100000)"
+    sql_str_g = "update client set membership = 'g' where client_id in (select client_id from BITCOIN_TRANSACTIONS WHERE DATE_TIME >= date('now','start of month','-1 months') AND DATE_TIME < date('now','start of month') group by client_id having sum(abs(NUMBER_OF_BITCOINS)*PRICE) > 100000)"
+    sql_str_s = "update client set membership = 's' where client_id not in (select client_id from BITCOIN_TRANSACTIONS WHERE DATE_TIME >= date('now','start of month','-1 months') AND DATE_TIME < date('now','start of month') group by client_id having sum(abs(NUMBER_OF_BITCOINS)*PRICE) > 100000)"
     db.execute(sql_str_g)
     db.execute(sql_str_s)
 
